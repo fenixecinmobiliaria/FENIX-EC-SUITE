@@ -1,0 +1,75 @@
+<div class="page" *ngIf="propiedad() as p; else noEncontradaTpl">
+  <a class="volver" routerLink="/">← Volver a la cola</a>
+
+  <header class="encabezado">
+    <div>
+      <h1>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</h1>
+      <p class="meta">
+        {{ p.CIUDAD }} · {{ p.HAB }} hab · {{ p.BNO }} baños · {{ p.AreaCons }} m² ·
+        <strong *ngIf="p.Precio_Venta">${{ p.Precio_Venta | number }} (venta)</strong>
+        <strong *ngIf="p.Precio_Renta">${{ p.Precio_Renta | number }}/mes (renta)</strong>
+      </p>
+      <p class="captura">Capturado por {{ p.capturadoPor }} · {{ p.fechaCaptura | date: 'medium' }}</p>
+    </div>
+    <span class="badge badge--borrador">Borrador — pendiente de aprobar</span>
+  </header>
+
+  <section class="bloque">
+    <h2>1. Ordena las fotos y elige la portada</h2>
+    <p class="ayuda">
+      Arrastra las fotos para definir el orden en el catálogo. Haz clic en "Elegir como portada"
+      en la foto que mejor represente la propiedad.
+    </p>
+
+    <div class="grid-fotos" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop($event)">
+      <div class="foto" *ngFor="let url of p.imagenes" cdkDrag>
+        <div class="foto__imagen" [style.backgroundImage]="'url(' + url + ')'"></div>
+
+        <span class="foto__portada-badge" *ngIf="esPortada(url)">★ Portada</span>
+
+        <button
+          type="button"
+          class="foto__boton"
+          [class.foto__boton--activo]="esPortada(url)"
+          (click)="elegirPortada(url)"
+        >
+          {{ esPortada(url) ? 'Es la portada' : 'Elegir como portada' }}
+        </button>
+
+        <div class="foto__arrastrar" cdkDragHandle>⠿ arrastrar</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <h2>2. Revisa el texto para publicar</h2>
+    <p class="ayuda">Este texto se usará en el sitio web, el bot de WhatsApp y la publicación en Facebook.</p>
+    <textarea
+      class="texto-editor"
+      rows="4"
+      [(ngModel)]="textoEditado"
+    ></textarea>
+  </section>
+
+  <footer class="acciones">
+    <button type="button" class="btn btn--secundario" (click)="guardarBorrador()" [disabled]="publicando()">
+      Guardar borrador
+    </button>
+    <button type="button" class="btn btn--primario" (click)="aprobarYPublicar()" [disabled]="publicando() || publicado()">
+      <span *ngIf="!publicando() && !publicado()">Aprobar y publicar</span>
+      <span *ngIf="publicando()">Publicando…</span>
+      <span *ngIf="publicado()">✓ Publicado</span>
+    </button>
+  </footer>
+
+  <p class="confirmacion" *ngIf="publicado()">
+    Propiedad publicada en el catálogo, el bot de WhatsApp y Facebook. Volviendo a la cola…
+  </p>
+</div>
+
+<ng-template #noEncontradaTpl>
+  <div class="page">
+    <p>No se encontró esta propiedad.</p>
+    <a routerLink="/">← Volver a la cola</a>
+  </div>
+</ng-template>

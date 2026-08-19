@@ -1,0 +1,48 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1>Fenix EC Suite</h1>
+      <p class="subtitle">Cola de aprobación — propiedades capturadas en campo</p>
+    </div>
+  </header>
+
+  <section class="cola">
+    <h2>Pendientes de aprobar ({{ borradores().length }})</h2>
+
+    <p class="vacio" *ngIf="borradores().length === 0">
+      No hay propiedades pendientes de aprobación en este momento.
+    </p>
+
+    <div class="tarjetas">
+      <a
+        class="tarjeta"
+        *ngFor="let p of borradores()"
+        [routerLink]="['/aprobar', p.id]"
+      >
+        <div class="tarjeta__foto" [style.backgroundImage]="'url(' + p.fotoPortadaUrl + ')'">
+          <span class="badge badge--borrador">Borrador</span>
+        </div>
+        <div class="tarjeta__info">
+          <strong>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</strong>
+          <span>{{ p.CIUDAD }} · {{ p.imagenes.length }} fotos</span>
+          <span class="agente">Capturado por {{ p.capturadoPor }}</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="cola cola--publicadas" *ngIf="publicadas().length > 0">
+    <h2>Ya publicadas ({{ publicadas().length }})</h2>
+    <div class="tarjetas">
+      <div class="tarjeta tarjeta--publicada" *ngFor="let p of publicadas()">
+        <div class="tarjeta__foto" [style.backgroundImage]="'url(' + p.fotoPortadaUrl + ')'">
+          <span class="badge badge--publicada">{{ p.Estado }}</span>
+        </div>
+        <div class="tarjeta__info">
+          <strong>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</strong>
+          <span>{{ p.CIUDAD }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
