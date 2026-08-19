@@ -195,6 +195,15 @@ label {
   margin: 0;
 }
 
+.acciones-form {
+  display: flex;
+  gap: 10px;
+
+  .btn {
+    flex: 1;
+  }
+}
+
 .btn {
   padding: 12px 22px;
   border-radius: 8px;
@@ -217,7 +226,12 @@ label {
   &--primario {
     background: #b8290f;
     color: #fff;
-    width: 100%;
     &:hover:not(:disabled) { background: #9c220c; }
+  }
+
+  &--facebook {
+    background: #1877f2;
+    color: #fff;
+    &:hover:not(:disabled) { background: #145dc4; }
   }
 }

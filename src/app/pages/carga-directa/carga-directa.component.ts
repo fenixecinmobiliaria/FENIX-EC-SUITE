@@ -17,9 +17,9 @@ interface FotoPendiente {
  * también. A diferencia de /captura, aquí NO hay foto de letrero ni GPS obligatorio
  * — solo se suben las fotos que enviaron y se pega/edita la descripción.
  *
- * Igual que /captura, escribe en `finalinmobiliaria/Propiedades` con
- * Estado: "Borrador" y pasa por la MISMA pantalla de aprobación (/real) antes de
- * quedar visible en el sitio, el bot y Facebook.
+ * Igual que /captura, escribe en `finalinmobiliaria/Propiedades` con Estado: "Borrador".
+ * Dos botones de guardado: "Guardar como Borrador" (pasa por /real) o "Facebook"
+ * (solo admin: guarda y publica de una vez, sin pasar por la aprobación).
  */
 @Component({
   selector: 'app-carga-directa',
@@ -48,9 +48,18 @@ export class CargaDirectaComponent {
   linkMapa = '';
 
   readonly fotos = signal<FotoPendiente[]>([]);
+  readonly esAdmin = signal(false);
   readonly guardando = signal(false);
+  readonly publicando = signal(false);
   readonly error = signal<string | null>(null);
   readonly exito = signal<string | null>(null);
+
+  constructor() {
+    const uid = this.authService.getCurrentUser()?.uid;
+    if (uid) {
+      this.authService.obtenerRol(uid).then((rol) => this.esAdmin.set(rol === 'admin'));
+    }
+  }
 
   onFotosSeleccionadas(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -72,6 +81,27 @@ export class CargaDirectaComponent {
     return null;
   }
 
+  private construirDatos(ipd: string): Omit<PropiedadFirestore, 'id' | 'imagenes'> {
+    return {
+      IPD: ipd,
+      TipoPropiedad: this.TipoPropiedad,
+      Estado: 'Borrador',
+      CIUDAD: this.CIUDAD,
+      Direccion_Sector: this.Direccion_Sector.trim(),
+      Precio_Venta: this.Modalidad === 'Venta' ? String(this.Precio) : undefined,
+      Precio_Renta: this.Modalidad === 'Renta' ? String(this.Precio) : undefined,
+      HAB: this.HAB != null ? String(this.HAB) : '0',
+      BNO: this.BNO != null ? String(this.BNO) : '0',
+      AreaCons: this.AreaCons != null ? String(this.AreaCons) : '0',
+      AreaTerreno: this.AreaTerreno != null ? String(this.AreaTerreno) : '0',
+      Amoblado: this.Amoblado,
+      Extras: this.Extras.trim(),
+      LinkMapa: this.linkMapa.trim() || undefined,
+      origenCaptacion: 'compartida',
+      compartidaPor: this.compartidaPor.trim(),
+    };
+  }
+
   async guardarBorrador() {
     this.error.set(null);
     this.exito.set(null);
@@ -85,26 +115,7 @@ export class CargaDirectaComponent {
     this.guardando.set(true);
     try {
       const ipd = await this.firestoreSvc.generarSiguienteIPD();
-
-      const datos: Omit<PropiedadFirestore, 'id' | 'imagenes'> = {
-        IPD: ipd,
-        TipoPropiedad: this.TipoPropiedad,
-        Estado: 'Borrador',
-        CIUDAD: this.CIUDAD,
-        Direccion_Sector: this.Direccion_Sector.trim(),
-        Precio_Venta: this.Modalidad === 'Venta' ? String(this.Precio) : undefined,
-        Precio_Renta: this.Modalidad === 'Renta' ? String(this.Precio) : undefined,
-        HAB: this.HAB != null ? String(this.HAB) : '0',
-        BNO: this.BNO != null ? String(this.BNO) : '0',
-        AreaCons: this.AreaCons != null ? String(this.AreaCons) : '0',
-        AreaTerreno: this.AreaTerreno != null ? String(this.AreaTerreno) : '0',
-        Amoblado: this.Amoblado,
-        Extras: this.Extras.trim(),
-        LinkMapa: this.linkMapa.trim() || undefined,
-        origenCaptacion: 'compartida',
-        compartidaPor: this.compartidaPor.trim(),
-      };
-
+      const datos = this.construirDatos(ipd);
       const archivos = this.fotos().map((f) => f.file);
       await this.firestoreSvc.crearBorrador(datos, archivos);
 
@@ -115,6 +126,48 @@ export class CargaDirectaComponent {
       this.error.set('No se pudo guardar. Revisa tu conexión e intenta de nuevo.');
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  /** Guarda Y publica de inmediato en Facebook (solo admin) — sin pasar por /real. */
+  async guardarYPublicarFacebook() {
+    this.error.set(null);
+    this.exito.set(null);
+
+    const problema = this.formularioValido();
+    if (problema) {
+      this.error.set(problema);
+      return;
+    }
+
+    const confirmado = window.confirm(
+      `Vas a guardar y publicar de inmediato "${this.TipoPropiedad} · ${this.Direccion_Sector}" en Facebook, ` +
+        'y quedará activa en el sitio y el bot de WhatsApp. La primera foto que agregaste será la portada. ¿Confirmas?',
+    );
+    if (!confirmado) return;
+
+    this.publicando.set(true);
+    try {
+      const ipd = await this.firestoreSvc.generarSiguienteIPD();
+      const datos = this.construirDatos(ipd);
+      const archivos = this.fotos().map((f) => f.file);
+      const nuevoId = await this.firestoreSvc.crearBorrador(datos, archivos);
+
+      const resultado = await this.firestoreSvc.publicarPorId(nuevoId);
+
+      this.exito.set(
+        `Propiedad ${ipd} publicada en Facebook y activada.` +
+          (resultado.facebookPostUrl ? ` Ver post: ${resultado.facebookPostUrl}` : ''),
+      );
+      this.limpiarFormulario();
+    } catch (e: any) {
+      console.error('Error al guardar y publicar:', e);
+      this.error.set(
+        e?.message ||
+          'Se guardó como Borrador pero no se pudo publicar en Facebook. Revísala desde /real e inténtalo de nuevo ahí.',
+      );
+    } finally {
+      this.publicando.set(false);
     }
   }
 

@@ -124,6 +124,16 @@ export class FirestorePropiedadesService {
     return updateDoc(docRef, { Extras: extras });
   }
 
+  /** Llama a la Cloud Function `publicarPropiedad` para el documento ya guardado en Firestore. */
+  async publicarPorId(propiedadId: string): Promise<ResultadoPublicacion> {
+    const llamar = httpsCallable<{ propiedadId: string }, ResultadoPublicacion>(
+      this.functions,
+      'publicarPropiedad',
+    );
+    const respuesta = await llamar({ propiedadId });
+    return respuesta.data;
+  }
+
   /**
    * Guarda el orden de fotos + texto definitivos y llama a la Cloud Function
    * `publicarPropiedad`, que publica en la Página de Facebook real y, solo si eso
@@ -133,12 +143,6 @@ export class FirestorePropiedadesService {
     const id = propiedad.id!;
     await this.actualizarImagenes(id, propiedad.imagenes ?? []);
     await this.actualizarTexto(id, propiedad.Extras ?? '');
-
-    const llamar = httpsCallable<{ propiedadId: string }, ResultadoPublicacion>(
-      this.functions,
-      'publicarPropiedad',
-    );
-    const respuesta = await llamar({ propiedadId: id });
-    return respuesta.data;
+    return this.publicarPorId(id);
   }
 }

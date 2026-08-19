@@ -111,8 +111,20 @@
     <p class="error" *ngIf="error()">{{ error() }}</p>
     <p class="exito" *ngIf="exito()">{{ exito() }}</p>
 
-    <button type="submit" class="btn btn--primario" [disabled]="guardando()">
-      {{ guardando() ? 'Guardando…' : 'Guardar como Borrador' }}
-    </button>
+    <div class="acciones-form">
+      <button type="submit" class="btn btn--primario" [disabled]="guardando() || publicando()">
+        {{ guardando() ? 'Guardando…' : 'Guardar como Borrador' }}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn--facebook"
+        *ngIf="esAdmin()"
+        [disabled]="guardando() || publicando()"
+        (click)="guardarYPublicarFacebook()"
+      >
+        {{ publicando() ? 'Publicando…' : '📘 Facebook' }}
+      </button>
+    </div>
   </form>
 </div>
