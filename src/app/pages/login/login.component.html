@@ -1,0 +1,24 @@
+<div class="login-page">
+  <form class="login-card" (ngSubmit)="iniciarSesion()">
+    <h1>Fenix EC Suite</h1>
+    <p class="subtitle">Inicia sesión con tu cuenta de administrador para ver los datos reales del catálogo.</p>
+
+    <label>
+      Correo
+      <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
+    </label>
+
+    <label>
+      Contraseña
+      <input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password" />
+    </label>
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+
+    <button type="submit" class="btn" [disabled]="cargando()">
+      {{ cargando() ? 'Ingresando…' : 'Ingresar' }}
+    </button>
+
+    <a class="volver" routerLink="/">← Seguir con datos de prueba</a>
+  </form>
+</div>
