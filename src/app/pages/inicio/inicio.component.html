@@ -1,0 +1,26 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1>Fenix EC Suite</h1>
+      <p class="subtitle">Sesión iniciada como {{ correo }}</p>
+    </div>
+    <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+  </header>
+
+  <div class="tarjetas">
+    <a class="tarjeta" routerLink="/captura">
+      <strong>📍 Captación en campo</strong>
+      <span>Foto de letrero + GPS. Para cuando sales a recorrer.</span>
+    </a>
+
+    <a class="tarjeta" routerLink="/carga-directa">
+      <strong>🔗 Propiedad compartida</strong>
+      <span>Fotos + descripción que te envió otra inmobiliaria o cliente.</span>
+    </a>
+
+    <a class="tarjeta tarjeta--admin" routerLink="/real" *ngIf="esAdmin()">
+      <strong>✅ Borradores pendientes</strong>
+      <span>Revisar, ordenar fotos y aprobar publicaciones (solo admin).</span>
+    </a>
+  </div>
+</div>

@@ -5,6 +5,7 @@
       <p class="subtitle">Se guarda como Borrador en el catálogo real — no se publica hasta que un admin lo apruebe.</p>
     </div>
     <div class="acciones-header">
+      <a routerLink="/inicio">🏠 Inicio</a>
       <a routerLink="/carga-directa">¿Te la compartió otra inmobiliaria? →</a>
       <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
@@ -104,7 +105,7 @@
     <section class="bloque-gps">
       <h2>Ubicación</h2>
       <button type="button" class="btn btn--secundario" (click)="capturarUbicacion()">📍 Capturar ubicación GPS</button>
-      <span class="gps-status">{{ statusGps }}</span>
+      <span class="gps-status">{{ statusGps() }}</span>
     </section>
 
     <p class="error" *ngIf="error()">{{ error() }}</p>

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, NgZone, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -34,6 +34,7 @@ export class CapturaComponent {
   private readonly firestoreSvc = inject(FirestorePropiedadesService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly ngZone = inject(NgZone);
 
   TipoPropiedad = 'Casa';
   Modalidad: 'Venta' | 'Renta' = 'Venta';
@@ -48,7 +49,7 @@ export class CapturaComponent {
   Extras = '';
 
   readonly fotos = signal<FotoPendiente[]>([]);
-  statusGps = 'Sin capturar';
+  readonly statusGps = signal('Sin capturar');
   private linkMapa = '';
 
   readonly guardando = signal(false);
@@ -69,18 +70,25 @@ export class CapturaComponent {
 
   capturarUbicacion() {
     if (!navigator.geolocation) {
-      this.statusGps = 'Este dispositivo no soporta geolocalización.';
+      this.statusGps.set('Este dispositivo no soporta geolocalización.');
       return;
     }
-    this.statusGps = 'Obteniendo ubicación…';
+    this.statusGps.set('Obteniendo ubicación…');
     navigator.geolocation.getCurrentPosition(
       (posicion) => {
-        const { latitude, longitude, accuracy } = posicion.coords;
-        this.linkMapa = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        this.statusGps = `Capturada (±${Math.round(accuracy)}m)`;
+        // El callback del GPS corre fuera de Angular (zone.js no lo parchea de forma
+        // confiable) — sin este ngZone.run() el dato llega pero la pantalla no se
+        // actualiza. El captacion-app original ya tenía este mismo workaround.
+        this.ngZone.run(() => {
+          const { latitude, longitude, accuracy } = posicion.coords;
+          this.linkMapa = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          this.statusGps.set(`Capturada (±${Math.round(accuracy)}m)`);
+        });
       },
       () => {
-        this.statusGps = 'No se pudo obtener la ubicación. Revisa los permisos del navegador.';
+        this.ngZone.run(() => {
+          this.statusGps.set('No se pudo obtener la ubicación. Revisa los permisos del navegador.');
+        });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
@@ -150,7 +158,7 @@ export class CapturaComponent {
     this.Amoblado = 'No';
     this.Extras = '';
     this.fotos.set([]);
-    this.statusGps = 'Sin capturar';
+    this.statusGps.set('Sin capturar');
     this.linkMapa = '';
   }
 

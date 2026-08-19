@@ -7,11 +7,13 @@ import { authGuard, adminGuard } from './auth.guard';
 import { CapturaComponent } from './pages/captura/captura.component';
 import { CargaDirectaComponent } from './pages/carga-directa/carga-directa.component';
 import { AprobacionRealDetalleComponent } from './pages/aprobacion-real-detalle/aprobacion-real-detalle.component';
+import { InicioComponent } from './pages/inicio/inicio.component';
 
 export const routes: Routes = [
   { path: '', component: ColaAprobacionComponent },
   { path: 'aprobar/:id', component: AprobacionDetalleComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'inicio', component: InicioComponent, canActivate: [authGuard] },
   { path: 'real', component: DatosRealesComponent, canActivate: [adminGuard] },
   { path: 'real/aprobar/:id', component: AprobacionRealDetalleComponent, canActivate: [adminGuard] },
   { path: 'captura', component: CapturaComponent, canActivate: [authGuard] },

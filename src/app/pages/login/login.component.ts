@@ -34,7 +34,7 @@ export class LoginComponent {
         await this.authService.logOut();
         return;
       }
-      this.router.navigate([rol === 'admin' ? '/real' : '/captura']);
+      this.router.navigate(['/inicio']);
     } catch (e: any) {
       this.error.set('No se pudo iniciar sesión. Revisa el correo y la contraseña.');
       console.error(e);

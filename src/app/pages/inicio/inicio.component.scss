@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f5f6f8;
+  color: #1c1f26;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+
+  h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #b8290f;
+  }
+
+  .subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  button {
+    border: 1px solid #d8dbe2;
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+
+    &:hover {
+      background: #f0f1f4;
+    }
+  }
+}
+
+.tarjetas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tarjeta {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  strong {
+    font-size: 16px;
+  }
+
+  span {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  &--admin strong {
+    color: #1f9d55;
+  }
+}
