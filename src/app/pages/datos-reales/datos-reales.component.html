@@ -2,25 +2,26 @@
   <header class="page__header">
     <div>
       <h1>Fenix EC Suite</h1>
-      <p class="subtitle">Conectado al catálogo real (finalinmobiliaria) — modo solo lectura</p>
+      <p class="subtitle">🔴 Conectado al catálogo real (finalinmobiliaria)</p>
     </div>
     <div class="acciones-header">
-      <a routerLink="/">Volver a datos de prueba</a>
+      <a routerLink="/captura">+ Captación en campo</a>
+      <a routerLink="/carga-directa">+ Propiedad compartida</a>
+      <a routerLink="/">Datos de prueba</a>
       <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
   </header>
 
   <p class="nota">
-    Esta pantalla lee directamente de Firestore, colección <code>Propiedades</code>, filtrando
-    <code>Estado == "Borrador"</code>. Las acciones de reordenar fotos y "Aprobar y publicar"
-    todavía no escriben aquí — eso se habilita junto con el formulario de captación real, para
-    asegurar que los tipos de campo coincidan exactamente con lo que espera el sitio público.
+    Borradores pendientes de aprobar en el catálogo real (colección <code>Propiedades</code>,
+    <code>Estado == "Borrador"</code>). Ábrela para reordenar fotos, elegir portada, editar el
+    texto y publicarla — eso sí publica de verdad en Facebook y la activa en el sitio/bot.
   </p>
 
   <ng-container *ngIf="borradores$ | async as borradores; else cargando">
     <p class="vacio" *ngIf="borradores.length === 0">
-      No hay propiedades en Borrador en el catálogo real todavía. Esto es esperado: la app de
-      captación en campo aún no está conectada a este proyecto de Firebase.
+      No hay propiedades en Borrador en el catálogo real todavía. Crea una de prueba desde
+      "+ Captación en campo" o "+ Propiedad compartida" arriba.
     </p>
 
     <div class="tarjetas" *ngIf="borradores.length > 0">
