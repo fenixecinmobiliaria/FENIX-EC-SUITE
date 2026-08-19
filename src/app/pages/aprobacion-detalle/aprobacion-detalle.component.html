@@ -21,7 +21,7 @@
       en la foto que mejor represente la propiedad.
     </p>
 
-    <div class="grid-fotos" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop($event)">
+    <div class="grid-fotos" cdkDropList (cdkDropListDropped)="drop($event)">
       <div class="foto" *ngFor="let url of p.imagenes" cdkDrag>
         <div class="foto__imagen" [style.backgroundImage]="'url(' + url + ')'"></div>
 
