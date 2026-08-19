@@ -14,28 +14,34 @@ import {
 } from '@angular/fire/firestore';
 import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage';
 import { Auth } from '@angular/fire/auth';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Observable, map } from 'rxjs';
 import { PropiedadFirestore } from '../models/propiedad-firestore.model';
+
+interface ResultadoPublicacion {
+  ok: boolean;
+  estado: string;
+  facebookPostUrl: string | null;
+}
 
 /**
  * Conexión al catálogo real (`finalinmobiliaria/Propiedades`).
  *
  * - Lectura: propiedades con Estado == 'Borrador' (pantalla /real, solo admin).
- * - Escritura: crear Borradores nuevos (formulario de captación) y, ahora sí,
- *   aprobar/publicar un Borrador existente (reordenar fotos, editar texto, cambiar
- *   Estado a Venta/Renta). Esto último SOLO lo hace un admin desde /real, con
- *   confirmación explícita en la UI antes de escribir.
- *
- * Nota: aprobar y publicar aquí deja la propiedad visible en el sitio y consultable
- * por el bot de WhatsApp de inmediato (ambos leen directo de esta colección). La
- * publicación automática en Facebook (Cloud Function `publicarPropiedad`) es un paso
- * aparte que todavía no existe.
+ * - Escritura directa desde el navegador: crear Borradores nuevos (formularios de
+ *   captación) y guardar cambios de un Borrador (reordenar fotos, editar texto) SIN
+ *   cambiar su Estado.
+ * - Aprobar y publicar: NO se hace con un updateDoc directo — se delega a la Cloud
+ *   Function `publicarPropiedad`, que corre en el servidor. Así el token de la
+ *   Página de Facebook nunca llega al navegador, y la propiedad solo pasa a
+ *   Venta/Renta (visible en sitio + bot) si el post de Facebook se publicó con éxito.
  */
 @Injectable({ providedIn: 'root' })
 export class FirestorePropiedadesService {
   private readonly firestore = inject(Firestore);
   private readonly storage = inject(Storage);
   private readonly auth = inject(Auth);
+  private readonly functions = inject(Functions);
   private readonly propiedadesCollection = collection(this.firestore, 'Propiedades');
 
   borradoresReal$(): Observable<PropiedadFirestore[]> {
@@ -119,17 +125,20 @@ export class FirestorePropiedadesService {
   }
 
   /**
-   * Aprueba y publica: pasa de Borrador a Venta/Renta (según qué campo de precio
-   * tenga la propiedad). A partir de aquí es visible en el sitio público y el bot
-   * de WhatsApp la puede recomendar de inmediato.
+   * Guarda el orden de fotos + texto definitivos y llama a la Cloud Function
+   * `publicarPropiedad`, que publica en la Página de Facebook real y, solo si eso
+   * tiene éxito, cambia Estado a Venta/Renta (visible en sitio + bot de inmediato).
    */
-  async aprobarYPublicar(propiedad: PropiedadFirestore): Promise<void> {
-    const docRef = doc(this.firestore, 'Propiedades', propiedad.id!);
-    const nuevoEstado = propiedad.Precio_Venta ? 'Venta' : 'Renta';
-    await updateDoc(docRef, {
-      imagenes: propiedad.imagenes ?? [],
-      Extras: propiedad.Extras ?? '',
-      Estado: nuevoEstado,
-    });
+  async aprobarYPublicar(propiedad: PropiedadFirestore): Promise<ResultadoPublicacion> {
+    const id = propiedad.id!;
+    await this.actualizarImagenes(id, propiedad.imagenes ?? []);
+    await this.actualizarTexto(id, propiedad.Extras ?? '');
+
+    const llamar = httpsCallable<{ propiedadId: string }, ResultadoPublicacion>(
+      this.functions,
+      'publicarPropiedad',
+    );
+    const respuesta = await llamar({ propiedadId: id });
+    return respuesta.data;
   }
 }

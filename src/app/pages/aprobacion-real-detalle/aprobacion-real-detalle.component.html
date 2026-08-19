@@ -54,14 +54,15 @@
         {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
       </button>
       <button type="button" class="btn btn--primario" (click)="aprobarYPublicar()" [disabled]="publicando() || publicado()">
-        <span *ngIf="!publicando() && !publicado()">Aprobar y publicar (real)</span>
-        <span *ngIf="publicando()">Publicando…</span>
+        <span *ngIf="!publicando() && !publicado()">Aprobar, publicar en Facebook y activar</span>
+        <span *ngIf="publicando()">Publicando en Facebook…</span>
         <span *ngIf="publicado()">✓ Publicado</span>
       </button>
     </footer>
 
     <p class="confirmacion" *ngIf="publicado()">
-      Propiedad publicada en el catálogo real y el bot de WhatsApp. Volviendo a la lista…
+      Propiedad publicada en Facebook, el catálogo real y el bot de WhatsApp. Volviendo a la lista…
+      <a *ngIf="facebookPostUrl()" [href]="facebookPostUrl()" target="_blank" rel="noopener">Ver el post →</a>
     </p>
   </ng-container>
 </div>

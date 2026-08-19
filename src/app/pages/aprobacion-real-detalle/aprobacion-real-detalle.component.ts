@@ -33,6 +33,7 @@ export class AprobacionRealDetalleComponent {
   readonly guardando = signal(false);
   readonly publicando = signal(false);
   readonly publicado = signal(false);
+  readonly facebookPostUrl = signal<string | null>(null);
   readonly error = signal<string | null>(null);
 
   constructor() {
@@ -102,22 +103,24 @@ export class AprobacionRealDetalleComponent {
     const modalidad = p.Precio_Venta ? 'VENTA' : 'RENTA';
     const confirmado = window.confirm(
       `Vas a publicar "${p.TipoPropiedad} · ${p.Direccion_Sector}" en ${modalidad} real.\n\n` +
-        'Quedará visible de inmediato en el sitio web y el bot de WhatsApp podrá recomendarla ' +
-        '(la publicación en Facebook todavía no está automatizada). ¿Confirmas?',
+        'Esto publica de inmediato ' + (p.imagenes?.length ?? 0) + ' foto(s) en la Página de Facebook ' +
+        '"Inmobiliaria Fenix EC" y, si eso funciona, queda visible en el sitio web y el bot de WhatsApp ' +
+        'puede recomendarla. Es una acción pública e inmediata. ¿Confirmas?',
     );
     if (!confirmado) return;
 
     this.publicando.set(true);
     this.error.set(null);
     try {
-      await this.svc.aprobarYPublicar(p);
+      const resultado = await this.svc.aprobarYPublicar(p);
       this.publicando.set(false);
       this.publicado.set(true);
-      setTimeout(() => this.router.navigate(['/real']), 1600);
-    } catch (e) {
+      this.facebookPostUrl.set(resultado.facebookPostUrl);
+      setTimeout(() => this.router.navigate(['/real']), 2600);
+    } catch (e: any) {
       console.error(e);
       this.publicando.set(false);
-      this.error.set('No se pudo publicar. Revisa tu conexión e intenta de nuevo.');
+      this.error.set(e?.message || 'No se pudo publicar. Revisa tu conexión e intenta de nuevo.');
     }
   }
 }
