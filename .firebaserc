@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "finalinmobiliaria"
-  }
+  },
+  "targets": {
+    "finalinmobiliaria": {
+      "hosting": {
+        "captacion": [
+          "fenix-ec-suite"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

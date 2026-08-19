@@ -5,5 +5,16 @@
       "codebase": "fenixecsuite",
       "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"]
     }
-  ]
+  ],
+  "hosting": {
+    "target": "captacion",
+    "public": "dist/fenix-ec-suite/browser",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }
