@@ -28,6 +28,7 @@
         <strong>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</strong>
         <span>{{ p.CIUDAD }} · IPD {{ p.IPD }}</span>
         <span>{{ (p.imagenes || []).length }} fotos · capturado por {{ p.capturadoPor }}</span>
+        <span class="etiqueta-compartida" *ngIf="p.origenCaptacion === 'compartida'">🔗 Compartida por {{ p.compartidaPor }}</span>
       </a>
     </div>
   </ng-container>

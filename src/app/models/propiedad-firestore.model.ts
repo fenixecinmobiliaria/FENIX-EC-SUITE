@@ -33,4 +33,9 @@ export interface PropiedadFirestore {
   // Campos nuevos para el flujo de captación + aprobación (no existen en registros viejos):
   agenciaId?: string;
   capturadoPor?: string;
+  /** 'campo': agente salió a recorrer (foto de letrero + GPS). 'compartida': otra
+   *  inmobiliaria o cliente aliado envió fotos + descripción de una propiedad ya lista. */
+  origenCaptacion?: 'campo' | 'compartida';
+  /** Solo cuando origenCaptacion === 'compartida': quién la compartió. */
+  compartidaPor?: string;
 }

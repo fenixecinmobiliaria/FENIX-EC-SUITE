@@ -13,7 +13,10 @@
           <strong *ngIf="p.Precio_Venta">${{ p.Precio_Venta }} (venta)</strong>
           <strong *ngIf="p.Precio_Renta">${{ p.Precio_Renta }}/mes (renta)</strong>
         </p>
-        <p class="captura">IPD {{ p.IPD }} · Capturado por {{ p.capturadoPor }}</p>
+        <p class="captura">
+          IPD {{ p.IPD }} · Capturado por {{ p.capturadoPor }}
+          <span *ngIf="p.origenCaptacion === 'compartida'"> · Compartida por {{ p.compartidaPor }}</span>
+        </p>
       </div>
       <span class="badge badge--real">🔴 Datos reales — Borrador</span>
     </header>

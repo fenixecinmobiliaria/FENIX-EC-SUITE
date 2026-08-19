@@ -12,25 +12,23 @@ interface FotoPendiente {
 }
 
 /**
- * Formulario de captación móvil — versión MVP.
+ * Segundo flujo de captación: propiedades que otra inmobiliaria o un cliente aliado
+ * ya tiene lista (fotos + descripción) y comparte con Fenix EC para promocionarla
+ * también. A diferencia de /captura, aquí NO hay foto de letrero ni GPS obligatorio
+ * — solo se suben las fotos que enviaron y se pega/edita la descripción.
  *
- * A propósito NO reproduce todavía los formularios específicos por tipo de propiedad
- * (casa/depto/terreno/local/bodega/edificio/quinta) del `captacion-app` actual: son
- * campos genéricos suficientes para probar el flujo completo captación → aprobación →
- * publicación contra el catálogo real. Se amplía después si hace falta ese detalle.
- *
- * Escribe directamente en `finalinmobiliaria/Propiedades` con Estado: "Borrador" —
- * NO queda visible en el sitio/bot/Facebook hasta que un admin la apruebe en /real
- * (esa pantalla de aprobación contra datos reales es el siguiente paso pendiente).
+ * Igual que /captura, escribe en `finalinmobiliaria/Propiedades` con
+ * Estado: "Borrador" y pasa por la MISMA pantalla de aprobación (/real) antes de
+ * quedar visible en el sitio, el bot y Facebook.
  */
 @Component({
-  selector: 'app-captura',
+  selector: 'app-carga-directa',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './captura.component.html',
-  styleUrl: './captura.component.scss',
+  templateUrl: './carga-directa.component.html',
+  styleUrl: './carga-directa.component.scss',
 })
-export class CapturaComponent {
+export class CargaDirectaComponent {
   private readonly firestoreSvc = inject(FirestorePropiedadesService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -46,11 +44,10 @@ export class CapturaComponent {
   AreaTerreno: number | null = null;
   Amoblado: 'Sí' | 'No' = 'No';
   Extras = '';
+  compartidaPor = '';
+  linkMapa = '';
 
   readonly fotos = signal<FotoPendiente[]>([]);
-  statusGps = 'Sin capturar';
-  private linkMapa = '';
-
   readonly guardando = signal(false);
   readonly error = signal<string | null>(null);
   readonly exito = signal<string | null>(null);
@@ -67,28 +64,10 @@ export class CapturaComponent {
     this.fotos.update((actuales) => actuales.filter((_, i) => i !== index));
   }
 
-  capturarUbicacion() {
-    if (!navigator.geolocation) {
-      this.statusGps = 'Este dispositivo no soporta geolocalización.';
-      return;
-    }
-    this.statusGps = 'Obteniendo ubicación…';
-    navigator.geolocation.getCurrentPosition(
-      (posicion) => {
-        const { latitude, longitude, accuracy } = posicion.coords;
-        this.linkMapa = `https://www.google.com/maps?q=${latitude},${longitude}`;
-        this.statusGps = `Capturada (±${Math.round(accuracy)}m)`;
-      },
-      () => {
-        this.statusGps = 'No se pudo obtener la ubicación. Revisa los permisos del navegador.';
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
-    );
-  }
-
   private formularioValido(): string | null {
     if (!this.Direccion_Sector.trim()) return 'Falta la dirección/sector.';
     if (!this.Precio || this.Precio <= 0) return 'Falta el precio.';
+    if (!this.compartidaPor.trim()) return 'Indica qué inmobiliaria o contacto la compartió.';
     if (this.fotos().length === 0) return 'Agrega al menos una foto.';
     return null;
   }
@@ -121,8 +100,9 @@ export class CapturaComponent {
         AreaTerreno: this.AreaTerreno != null ? String(this.AreaTerreno) : '0',
         Amoblado: this.Amoblado,
         Extras: this.Extras.trim(),
-        LinkMapa: this.linkMapa || undefined,
-        origenCaptacion: 'campo',
+        LinkMapa: this.linkMapa.trim() || undefined,
+        origenCaptacion: 'compartida',
+        compartidaPor: this.compartidaPor.trim(),
       };
 
       const archivos = this.fotos().map((f) => f.file);
@@ -149,9 +129,9 @@ export class CapturaComponent {
     this.AreaTerreno = null;
     this.Amoblado = 'No';
     this.Extras = '';
-    this.fotos.set([]);
-    this.statusGps = 'Sin capturar';
+    this.compartidaPor = '';
     this.linkMapa = '';
+    this.fotos.set([]);
   }
 
   cerrarSesion() {

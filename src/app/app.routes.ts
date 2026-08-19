@@ -5,6 +5,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { DatosRealesComponent } from './pages/datos-reales/datos-reales.component';
 import { authGuard, adminGuard } from './auth.guard';
 import { CapturaComponent } from './pages/captura/captura.component';
+import { CargaDirectaComponent } from './pages/carga-directa/carga-directa.component';
 import { AprobacionRealDetalleComponent } from './pages/aprobacion-real-detalle/aprobacion-real-detalle.component';
 
 export const routes: Routes = [
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'real', component: DatosRealesComponent, canActivate: [adminGuard] },
   { path: 'real/aprobar/:id', component: AprobacionRealDetalleComponent, canActivate: [adminGuard] },
   { path: 'captura', component: CapturaComponent, canActivate: [authGuard] },
+  { path: 'carga-directa', component: CargaDirectaComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' },
 ];

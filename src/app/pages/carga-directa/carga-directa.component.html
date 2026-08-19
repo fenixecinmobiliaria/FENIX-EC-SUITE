@@ -1,16 +1,21 @@
 <div class="page">
   <header class="page__header">
     <div>
-      <h1>Captación en campo</h1>
-      <p class="subtitle">Se guarda como Borrador en el catálogo real — no se publica hasta que un admin lo apruebe.</p>
+      <h1>Propiedad compartida por otra inmobiliaria</h1>
+      <p class="subtitle">Sube las fotos y la descripción que te enviaron. Se guarda como Borrador — no se publica hasta que un admin la apruebe.</p>
     </div>
     <div class="acciones-header">
-      <a routerLink="/carga-directa">¿Te la compartió otra inmobiliaria? →</a>
+      <a routerLink="/captura">Captación en campo →</a>
       <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
   </header>
 
   <form class="form" (ngSubmit)="guardarBorrador()">
+    <label>
+      Compartida por (inmobiliaria o contacto)
+      <input type="text" name="compartidaPor" [(ngModel)]="compartidaPor" placeholder="Ej: Inmobiliaria Andrade, o el nombre del contacto" required />
+    </label>
+
     <div class="fila">
       <label>
         Tipo de propiedad
@@ -77,16 +82,21 @@
           <option value="Sí">Sí</option>
         </select>
       </label>
+
+      <label class="ancho-doble">
+        Link de Google Maps (opcional, si te lo compartieron)
+        <input type="text" name="linkMapa" [(ngModel)]="linkMapa" placeholder="https://maps.google.com/…" />
+      </label>
     </div>
 
     <label class="bloque-completo">
-      Descripción / observaciones
-      <textarea name="extras" rows="3" [(ngModel)]="Extras" placeholder="Ej: casa de dos plantas, cocina americana, jardín amplio…"></textarea>
+      Descripción (pega aquí el texto que te enviaron, o edítalo)
+      <textarea name="extras" rows="5" [(ngModel)]="Extras" placeholder="Pega aquí la descripción que te compartió la otra inmobiliaria…"></textarea>
     </label>
 
     <section class="bloque-fotos">
       <h2>Fotos</h2>
-      <p class="ayuda">Toma o elige varias fotos. En la pantalla de aprobación se ordenan y se elige la portada.</p>
+      <p class="ayuda">Sube las fotos que te enviaron. En la pantalla de aprobación se ordenan y se elige la portada.</p>
 
       <div class="grid-fotos">
         <div class="foto" *ngFor="let f of fotos(); let i = index">
@@ -95,16 +105,10 @@
         </div>
 
         <label class="agregar-foto">
-          <input type="file" accept="image/*" capture="environment" multiple (change)="onFotosSeleccionadas($event)" hidden />
+          <input type="file" accept="image/*" multiple (change)="onFotosSeleccionadas($event)" hidden />
           + Agregar fotos
         </label>
       </div>
-    </section>
-
-    <section class="bloque-gps">
-      <h2>Ubicación</h2>
-      <button type="button" class="btn btn--secundario" (click)="capturarUbicacion()">📍 Capturar ubicación GPS</button>
-      <span class="gps-status">{{ statusGps }}</span>
     </section>
 
     <p class="error" *ngIf="error()">{{ error() }}</p>
