@@ -22,5 +22,10 @@
       <strong>✅ Borradores pendientes</strong>
       <span>Revisar, ordenar fotos y aprobar publicaciones (solo admin).</span>
     </a>
+
+    <a class="tarjeta tarjeta--admin" routerLink="/captadores" *ngIf="esAdmin()">
+      <strong>👥 Captadores</strong>
+      <span>Crear, renombrar o eliminar cuentas de agentes de campo (solo admin).</span>
+    </a>
   </div>
 </div>

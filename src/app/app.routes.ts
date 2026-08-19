@@ -8,6 +8,7 @@ import { CapturaComponent } from './pages/captura/captura.component';
 import { CargaDirectaComponent } from './pages/carga-directa/carga-directa.component';
 import { AprobacionRealDetalleComponent } from './pages/aprobacion-real-detalle/aprobacion-real-detalle.component';
 import { InicioComponent } from './pages/inicio/inicio.component';
+import { CaptadoresComponent } from './pages/captadores/captadores.component';
 
 export const routes: Routes = [
   { path: '', component: ColaAprobacionComponent },
@@ -18,5 +19,6 @@ export const routes: Routes = [
   { path: 'real/aprobar/:id', component: AprobacionRealDetalleComponent, canActivate: [adminGuard] },
   { path: 'captura', component: CapturaComponent, canActivate: [authGuard] },
   { path: 'carga-directa', component: CargaDirectaComponent, canActivate: [authGuard] },
+  { path: 'captadores', component: CaptadoresComponent, canActivate: [adminGuard] },
   { path: '**', redirectTo: '' },
 ];

@@ -1,0 +1,69 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1>Captadores</h1>
+      <p class="subtitle">Cuentas simples por iniciales — solo tú (admin) las creas, editas o eliminas aquí.</p>
+    </div>
+    <a routerLink="/inicio">🏠 Inicio</a>
+  </header>
+
+  <section class="bloque">
+    <h2>Nuevo captador</h2>
+    <form class="form-nuevo" (ngSubmit)="crearCaptador()">
+      <label>
+        Iniciales
+        <input type="text" [(ngModel)]="nuevasIniciales" name="iniciales" placeholder="Ej: CAPT1" maxlength="10" required />
+      </label>
+      <label>
+        Contraseña
+        <input type="text" [(ngModel)]="nuevaPassword" name="password" placeholder="Mínimo 6 caracteres" required />
+      </label>
+      <button type="submit" class="btn btn--primario" [disabled]="creando()">
+        {{ creando() ? 'Creando…' : '+ Crear captador' }}
+      </button>
+    </form>
+    <p class="ayuda">
+      La contraseña la compartes tú directamente con el agente (WhatsApp, en persona, etc.) — nunca queda registrada
+      en ningún chat.
+    </p>
+  </section>
+
+  <p class="error" *ngIf="error()">{{ error() }}</p>
+  <p class="exito" *ngIf="exito()">{{ exito() }}</p>
+
+  <section class="bloque">
+    <h2>Captadores existentes ({{ captadores().length }})</h2>
+
+    <p class="vacio" *ngIf="cargando()">Cargando…</p>
+    <p class="vacio" *ngIf="!cargando() && captadores().length === 0">Todavía no has creado ningún captador.</p>
+
+    <div class="lista" *ngIf="!cargando() && captadores().length > 0">
+      <div class="fila" *ngFor="let c of captadores()">
+        <ng-container *ngIf="editandoUid() !== c.uid; else edicion">
+          <span class="iniciales">{{ c.iniciales }}</span>
+          <div class="acciones-fila">
+            <button type="button" class="btn-mini" (click)="empezarEdicion(c)">Renombrar</button>
+            <button
+              type="button"
+              class="btn-mini btn-mini--peligro"
+              [disabled]="eliminandoUid() === c.uid"
+              (click)="eliminarCaptador(c)"
+            >
+              {{ eliminandoUid() === c.uid ? 'Eliminando…' : 'Eliminar' }}
+            </button>
+          </div>
+        </ng-container>
+
+        <ng-template #edicion>
+          <input type="text" [(ngModel)]="inicialesEnEdicion" maxlength="10" class="input-edicion" />
+          <div class="acciones-fila">
+            <button type="button" class="btn-mini" [disabled]="guardandoEdicion()" (click)="guardarEdicion(c.uid)">
+              {{ guardandoEdicion() ? 'Guardando…' : 'Guardar' }}
+            </button>
+            <button type="button" class="btn-mini" (click)="cancelarEdicion()">Cancelar</button>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </section>
+</div>

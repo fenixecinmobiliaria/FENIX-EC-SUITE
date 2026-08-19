@@ -35,10 +35,12 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
 initializeApp();
 const db = getFirestore();
+const auth = getAuth();
 
 const FACEBOOK_PAGE_TOKEN = defineSecret("FACEBOOK_PAGE_TOKEN");
 
@@ -131,20 +133,27 @@ function urlDelPost(postId) {
 }
 
 // ---------------------------------------------------------------------------
-// Función callable
+// Autenticación / rol admin (compartido entre todas las funciones callable)
+// ---------------------------------------------------------------------------
+
+async function verificarAdmin(request) {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Debes iniciar sesión.");
+  }
+  const usuarioDoc = await db.collection("User").doc(request.auth.uid).get();
+  if (!usuarioDoc.exists || usuarioDoc.data()?.rol !== "admin") {
+    throw new HttpsError("permission-denied", "Solo un administrador puede hacer esto.");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Publicar propiedad
 // ---------------------------------------------------------------------------
 
 exports.publicarPropiedad = onCall(
   { secrets: [FACEBOOK_PAGE_TOKEN], region: "us-central1", timeoutSeconds: 120 },
   async (request) => {
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Debes iniciar sesión para publicar.");
-    }
-
-    const usuarioDoc = await db.collection("User").doc(request.auth.uid).get();
-    if (!usuarioDoc.exists || usuarioDoc.data()?.rol !== "admin") {
-      throw new HttpsError("permission-denied", "Solo un administrador puede aprobar y publicar.");
-    }
+    await verificarAdmin(request);
 
     const propiedadId = request.data?.propiedadId;
     if (!propiedadId) {
@@ -204,3 +213,102 @@ exports.publicarPropiedad = onCall(
     return { ok: true, estado: nuevoEstado, facebookPostUrl: urlDelPost(postId) };
   }
 );
+
+// ---------------------------------------------------------------------------
+// Gestión de captadores — cuentas simples identificadas por iniciales (PC, CAPT1...)
+//
+// Firebase Auth exige un email para el login por email/password, así que se arma uno
+// interno (no es un correo real, nadie lo necesita recibir) a partir de las iniciales:
+// "PC" -> "pc@captacion.fenixec.local". La contraseña la escribe el admin en el
+// formulario — nunca pasa por el código ni se guarda en ningún lado además de Auth.
+// ---------------------------------------------------------------------------
+
+const DOMINIO_CAPTADORES = "captacion.fenixec.local";
+
+function emailDeIniciales(iniciales) {
+  return `${iniciales.trim().toLowerCase()}@${DOMINIO_CAPTADORES}`;
+}
+
+exports.listarCaptadores = onCall({ region: "us-central1" }, async (request) => {
+  await verificarAdmin(request);
+  const snapshot = await db.collection("User").where("rol", "==", "captador").get();
+  return snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }));
+});
+
+exports.crearCaptador = onCall({ region: "us-central1" }, async (request) => {
+  await verificarAdmin(request);
+
+  const iniciales = (request.data?.iniciales || "").trim();
+  const password = request.data?.password || "";
+
+  if (!/^[A-Za-z0-9]{2,10}$/.test(iniciales)) {
+    throw new HttpsError("invalid-argument", "Las iniciales deben ser solo letras/números, entre 2 y 10 caracteres.");
+  }
+  if (password.length < 6) {
+    throw new HttpsError("invalid-argument", "La contraseña debe tener al menos 6 caracteres.");
+  }
+
+  const email = emailDeIniciales(iniciales);
+
+  let usuarioAuth;
+  try {
+    usuarioAuth = await auth.createUser({ email, password, displayName: iniciales.toUpperCase() });
+  } catch (error) {
+    if (error.code === "auth/email-already-exists") {
+      throw new HttpsError("already-exists", `Ya existe un captador con las iniciales "${iniciales.toUpperCase()}".`);
+    }
+    logger.error("Error al crear captador en Auth:", error);
+    throw new HttpsError("internal", `No se pudo crear la cuenta: ${error.message}`);
+  }
+
+  await db.collection("User").doc(usuarioAuth.uid).set({
+    rol: "captador",
+    iniciales: iniciales.toUpperCase(),
+    email,
+    fechaCreacion: FieldValue.serverTimestamp(),
+    creadoPor: request.auth.uid,
+  });
+
+  logger.info(`Captador creado: ${iniciales.toUpperCase()} (${usuarioAuth.uid})`);
+  return { uid: usuarioAuth.uid, iniciales: iniciales.toUpperCase(), email };
+});
+
+exports.actualizarInicialesCaptador = onCall({ region: "us-central1" }, async (request) => {
+  await verificarAdmin(request);
+
+  const uid = request.data?.uid;
+  const iniciales = (request.data?.iniciales || "").trim();
+  if (!uid) throw new HttpsError("invalid-argument", "Falta el uid del captador.");
+  if (!/^[A-Za-z0-9]{2,10}$/.test(iniciales)) {
+    throw new HttpsError("invalid-argument", "Las iniciales deben ser solo letras/números, entre 2 y 10 caracteres.");
+  }
+
+  // Nota: esto solo actualiza la etiqueta que se muestra en la lista — el email con el
+  // que ese captador inicia sesión NO cambia (evita romper su acceso ya configurado).
+  await db.collection("User").doc(uid).update({ iniciales: iniciales.toUpperCase() });
+  return { ok: true };
+});
+
+exports.eliminarCaptador = onCall({ region: "us-central1" }, async (request) => {
+  await verificarAdmin(request);
+
+  const uid = request.data?.uid;
+  if (!uid) throw new HttpsError("invalid-argument", "Falta el uid del captador.");
+
+  const doc = await db.collection("User").doc(uid).get();
+  if (doc.exists && doc.data()?.rol !== "captador") {
+    throw new HttpsError("failed-precondition", "Esta cuenta no es de un captador — no se elimina por aquí.");
+  }
+
+  try {
+    await auth.deleteUser(uid);
+  } catch (error) {
+    if (error.code !== "auth/user-not-found") {
+      logger.error("Error al eliminar captador de Auth:", error);
+      throw new HttpsError("internal", `No se pudo eliminar la cuenta: ${error.message}`);
+    }
+  }
+  await db.collection("User").doc(uid).delete();
+
+  return { ok: true };
+});
