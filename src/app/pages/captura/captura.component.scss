@@ -108,6 +108,27 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.3rem;
     font-weight: 600;
   }
+
+  .capturado-por {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: $text-muted;
+
+    strong {
+      color: $fenix-gold;
+    }
+  }
+}
+
+.nota-prospecto {
+  margin: 0 0 4px;
+  padding: 8px 12px;
+  background: rgba(#22c55e, 0.1);
+  border: 1px solid rgba(#22c55e, 0.3);
+  border-radius: 8px;
+  color: #22c55e;
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 form {
@@ -169,6 +190,24 @@ form {
     font-size: 11px;
     cursor: pointer;
     line-height: 1;
+  }
+
+  &__etiqueta {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(#22c55e, 0.85);
+    color: #000;
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    padding: 2px 0;
+    text-transform: uppercase;
+  }
+
+  &--anuncio {
+    border-color: #22c55e;
   }
 }
 

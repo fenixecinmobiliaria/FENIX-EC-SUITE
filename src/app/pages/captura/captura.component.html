@@ -12,21 +12,30 @@
     <div class="card-captura">
       <div class="header-captura">
         <h2>Nueva Captación</h2>
+        <p class="capturado-por">Capturado por: <strong>{{ misIniciales() }}</strong></p>
       </div>
 
       <form (ngSubmit)="guardarBorrador()">
         <div class="media-section">
+          <p class="nota-prospecto" *ngIf="fotoDeProspecto()">
+            ✅ Captación aceptada — se usará la foto del anuncio que ya tomaste.
+          </p>
+
           <button type="button" class="btn-action" (click)="capturarUbicacion()">
             📍 Obtener Ubicación GPS
           </button>
           <p class="status-text">{{ statusGps() }}</p>
 
           <label class="btn-action btn-photo-label">
-            📷 Agregar Fotos
+            📷 Agregar Fotos de la Propiedad
             <input type="file" accept="image/*" capture="environment" multiple (change)="onFotosSeleccionadas($event)" hidden />
           </label>
 
-          <div class="grid-fotos" *ngIf="fotos().length > 0">
+          <div class="grid-fotos" *ngIf="fotoDeProspecto() || fotos().length > 0">
+            <div class="foto-mini foto-mini--anuncio" *ngIf="fotoDeProspecto()">
+              <img [src]="fotoDeProspecto()" alt="Foto del anuncio" />
+              <span class="foto-mini__etiqueta">Anuncio</span>
+            </div>
             <div class="foto-mini" *ngFor="let f of fotos(); let i = index">
               <img [src]="f.previewUrl" alt="" />
               <button type="button" class="foto-mini__quitar" (click)="quitarFoto(i)">✕</button>

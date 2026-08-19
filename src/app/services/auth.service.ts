@@ -47,6 +47,22 @@ export class AuthService {
     return (await this.obtenerRol(userId)) === 'admin';
   }
 
+  /** Rol + iniciales (ej. "PC", "CAPT1") de `User/{uid}` — para mostrar "Capturado por" en los formularios. */
+  async obtenerPerfil(userId: string): Promise<{ rol: string | null; iniciales: string | null }> {
+    try {
+      const userRef = doc(this.firestore, 'User', userId);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        return { rol: data?.['rol'] ?? null, iniciales: data?.['iniciales'] ?? null };
+      }
+      return { rol: null, iniciales: null };
+    } catch (e) {
+      console.error('Error al leer el perfil de usuario:', e);
+      return { rol: null, iniciales: null };
+    }
+  }
+
   getCurrentUser(): User | null {
     return this.auth.currentUser;
   }

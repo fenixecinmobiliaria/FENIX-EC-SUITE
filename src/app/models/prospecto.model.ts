@@ -1,0 +1,26 @@
+export type EstadoProspecto = 'Por llamar' | 'No contesta' | 'Va a consultar' | 'Rechazó' | 'Aceptó';
+
+export interface IntentoContacto {
+  fecha: number; // Date.now() — más simple de ordenar/mostrar en el cliente que Timestamp
+  estado: EstadoProspecto;
+  nota?: string;
+}
+
+/**
+ * Un "prospecto" es un letrero visto en la calle, ANTES de que el dueño acepte pagar
+ * comisión. Vive separado de `Propiedades` a propósito — no es una propiedad real
+ * todavía, es un contacto en proceso. Cuando el dueño acepta, se convierte en un
+ * Borrador real (ver /captura?prospectoId=...) y este documento se elimina.
+ */
+export interface Prospecto {
+  id?: string;
+  fotoLetrero: string;
+  linkMapa?: string;
+  CIUDAD?: string;
+  Direccion_Sector?: string;
+  capturadoPor: string; // iniciales del captador
+  capturadoPorUid: string;
+  estado: EstadoProspecto;
+  intentos: IntentoContacto[];
+  fechaCreacion: number;
+}

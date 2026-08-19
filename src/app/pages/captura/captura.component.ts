@@ -1,9 +1,10 @@
 import { Component, NgZone, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FirestorePropiedadesService } from '../../services/firestore-propiedades.service';
 import { AuthService } from '../../services/auth.service';
+import { ProspectosService } from '../../services/prospectos.service';
 import { PropiedadFirestore } from '../../models/propiedad-firestore.model';
 import {
   DetallesBodega, DetallesCasa, DetallesDep, DetallesEdificio, DetallesLocal, DetallesQuinta, DetallesTerreno,
@@ -20,9 +21,12 @@ interface FotoPendiente {
 /**
  * Formulario de captación móvil — mismos parámetros y mismo diseño (dark/gold) que
  * `captacion-app` (el original), estandarizado para que ambos programas se vean y
- * pregunten lo mismo. Diferencia real: aquí se escribe directo en
- * `finalinmobiliaria/Propiedades` (Estado: "Borrador"), no en el Firebase aislado del
- * captacion-app viejo, y se permiten varias fotos (el original solo dejaba una).
+ * pregunten lo mismo.
+ *
+ * Fase 2 del flujo real: se llega aquí DESPUÉS de que el dueño ya aceptó pagar
+ * comisión (ver /prospectos). Si viene un `?prospectoId=...` en la URL, se precarga
+ * la foto del anuncio + la ubicación que ya se capturaron en la Fase 1, y al guardar
+ * se borra el prospecto (ya se convirtió en propiedad real).
  *
  * Dos botones de guardado:
  *  - "Guardar como Borrador": un admin la revisa/aprueba luego en /real.
@@ -38,7 +42,9 @@ interface FotoPendiente {
 export class CapturaComponent {
   private readonly firestoreSvc = inject(FirestorePropiedadesService);
   private readonly authService = inject(AuthService);
+  private readonly prospectosSvc = inject(ProspectosService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly ngZone = inject(NgZone);
 
   readonly tipos = TIPOS_PROPIEDAD;
@@ -63,10 +69,13 @@ export class CapturaComponent {
   detQuinta: DetallesQuinta = detallesQuintaVacio();
 
   readonly fotos = signal<FotoPendiente[]>([]);
+  readonly fotoDeProspecto = signal<string | null>(null);
   readonly statusGps = signal('Sin capturar');
   private linkMapa = '';
+  private prospectoId: string | null = null;
 
   readonly esAdmin = signal(false);
+  readonly misIniciales = signal('');
   readonly guardando = signal(false);
   readonly publicando = signal(false);
   readonly error = signal<string | null>(null);
@@ -75,7 +84,22 @@ export class CapturaComponent {
   constructor() {
     const uid = this.authService.getCurrentUser()?.uid;
     if (uid) {
-      this.authService.obtenerRol(uid).then((rol) => this.esAdmin.set(rol === 'admin'));
+      this.authService.obtenerPerfil(uid).then((p) => {
+        this.esAdmin.set(p.rol === 'admin');
+        this.misIniciales.set(p.iniciales || this.authService.getCurrentUser()?.email || '');
+      });
+    }
+
+    this.prospectoId = this.route.snapshot.queryParamMap.get('prospectoId');
+    if (this.prospectoId) {
+      this.prospectosSvc.porId(this.prospectoId).then((p) => {
+        if (!p) return;
+        this.fotoDeProspecto.set(p.fotoLetrero);
+        this.linkMapa = p.linkMapa || '';
+        this.statusGps.set(p.linkMapa ? 'Ubicación tomada del prospecto' : 'Sin capturar');
+        if (p.CIUDAD) this.CIUDAD = p.CIUDAD;
+        if (p.Direccion_Sector) this.Direccion_Sector = p.Direccion_Sector;
+      });
     }
   }
 
@@ -121,7 +145,7 @@ export class CapturaComponent {
     if (!this.tipo) return 'Elige el tipo de propiedad.';
     if (!this.Direccion_Sector.trim()) return 'Falta la dirección/sector.';
     if (!this.Precio || this.Precio <= 0) return 'Falta el precio.';
-    if (this.fotos().length === 0) return 'Agrega al menos una foto.';
+    if (this.fotos().length === 0 && !this.fotoDeProspecto()) return 'Agrega al menos una foto.';
     return null;
   }
 
@@ -157,8 +181,20 @@ export class CapturaComponent {
       LinkMapa: this.linkMapa || undefined,
       origenCaptacion: 'campo',
       TipoTransaccion: this.Modalidad,
+      capturadoPor: this.misIniciales(),
       ...camposTipo,
     } as Omit<PropiedadFirestore, 'id' | 'imagenes'>;
+  }
+
+  /** Si esta captación viene de un prospecto aceptado, lo elimina (ya se convirtió). */
+  private async limpiarProspectoSiAplica() {
+    if (this.prospectoId) {
+      try {
+        await this.prospectosSvc.eliminar(this.prospectoId);
+      } catch (e) {
+        console.error('No se pudo eliminar el prospecto ya convertido:', e);
+      }
+    }
   }
 
   async guardarBorrador() {
@@ -176,7 +212,9 @@ export class CapturaComponent {
       const ipd = await this.firestoreSvc.generarSiguienteIPD();
       const datos = this.construirDatos(ipd);
       const archivos = this.fotos().map((f) => f.file);
-      await this.firestoreSvc.crearBorrador(datos, archivos);
+      const fotoProspecto = this.fotoDeProspecto();
+      await this.firestoreSvc.crearBorrador(datos, archivos, fotoProspecto ? [fotoProspecto] : []);
+      await this.limpiarProspectoSiAplica();
 
       this.exito.set(`Propiedad ${ipd} guardada como Borrador. Un administrador la revisará antes de publicarla.`);
       this.limpiarFormulario();
@@ -210,7 +248,9 @@ export class CapturaComponent {
       const ipd = await this.firestoreSvc.generarSiguienteIPD();
       const datos = this.construirDatos(ipd);
       const archivos = this.fotos().map((f) => f.file);
-      const nuevoId = await this.firestoreSvc.crearBorrador(datos, archivos);
+      const fotoProspecto = this.fotoDeProspecto();
+      const nuevoId = await this.firestoreSvc.crearBorrador(datos, archivos, fotoProspecto ? [fotoProspecto] : []);
+      await this.limpiarProspectoSiAplica();
 
       const resultado = await this.firestoreSvc.publicarPorId(nuevoId);
 
@@ -248,8 +288,10 @@ export class CapturaComponent {
     this.detEdificio = detallesEdificioVacio();
     this.detQuinta = detallesQuintaVacio();
     this.fotos.set([]);
+    this.fotoDeProspecto.set(null);
     this.statusGps.set('Sin capturar');
     this.linkMapa = '';
+    this.prospectoId = null;
   }
 
   cerrarSesion() {

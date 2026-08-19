@@ -9,6 +9,8 @@ import { CargaDirectaComponent } from './pages/carga-directa/carga-directa.compo
 import { AprobacionRealDetalleComponent } from './pages/aprobacion-real-detalle/aprobacion-real-detalle.component';
 import { InicioComponent } from './pages/inicio/inicio.component';
 import { CaptadoresComponent } from './pages/captadores/captadores.component';
+import { ProspectoNuevoComponent } from './pages/prospecto-nuevo/prospecto-nuevo.component';
+import { ProspectosComponent } from './pages/prospectos/prospectos.component';
 
 export const routes: Routes = [
   { path: '', component: ColaAprobacionComponent },
@@ -17,6 +19,8 @@ export const routes: Routes = [
   { path: 'inicio', component: InicioComponent, canActivate: [authGuard] },
   { path: 'real', component: DatosRealesComponent, canActivate: [adminGuard] },
   { path: 'real/aprobar/:id', component: AprobacionRealDetalleComponent, canActivate: [adminGuard] },
+  { path: 'prospectos', component: ProspectosComponent, canActivate: [authGuard] },
+  { path: 'prospectos/nuevo', component: ProspectoNuevoComponent, canActivate: [authGuard] },
   { path: 'captura', component: CapturaComponent, canActivate: [authGuard] },
   { path: 'carga-directa', component: CargaDirectaComponent, canActivate: [authGuard] },
   { path: 'captadores', component: CaptadoresComponent, canActivate: [adminGuard] },

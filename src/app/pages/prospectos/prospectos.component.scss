@@ -1,0 +1,190 @@
+$fenix-dark-bg: #0a0a0a;
+$fenix-card-bg: #141414;
+$fenix-gold: #ffc129;
+$white: #ffffff;
+$text-muted: #94a3b8;
+$border-color: rgba(255, 193, 41, 0.15);
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: $fenix-dark-bg;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 20px;
+  background-color: $fenix-card-bg;
+  border-bottom: 1px solid $border-color;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand-title {
+  color: $white;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  span { color: $fenix-gold; font-weight: 400; }
+}
+
+.acciones-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+
+  a {
+    color: $text-muted;
+    text-decoration: none;
+    &:hover { color: $fenix-gold; }
+  }
+}
+
+.main-content {
+  padding: 20px 15px 60px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.titulo {
+  color: $white;
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+}
+
+.ayuda {
+  color: $text-muted;
+  font-size: 0.85rem;
+  margin: 0 0 20px;
+}
+
+.vacio {
+  color: $text-muted;
+  font-style: italic;
+  text-align: center;
+  padding: 30px 0;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tarjeta {
+  background-color: $fenix-card-bg;
+  border: 1px solid $border-color;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 14px;
+}
+
+.tarjeta__img {
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: #1e1e1e;
+  grid-row: span 2;
+}
+
+.tarjeta__info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  strong { color: $white; font-size: 0.95rem; }
+
+  .muted { color: $text-muted; font-size: 0.78rem; }
+
+  .link-mapa {
+    color: $fenix-gold;
+    font-size: 0.78rem;
+    text-decoration: none;
+    width: fit-content;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.badge {
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  &.estado--porllamar { background: rgba($fenix-gold, 0.15); color: $fenix-gold; }
+  &.estado--nocontesta { background: rgba(#94a3b8, 0.15); color: #94a3b8; }
+  &.estado--consultar { background: rgba(#3b82f6, 0.15); color: #3b82f6; }
+  &.estado--rechazado { background: rgba(#ef4444, 0.15); color: #ef4444; }
+  &.estado--aceptado { background: rgba(#22c55e, 0.15); color: #22c55e; }
+}
+
+.intentos {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.intento {
+  font-size: 0.75rem;
+  color: rgba($white, 0.6);
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+
+  &__estado { color: $white; font-weight: 600; }
+  &__fecha { color: $text-muted; }
+
+  p { margin: 0 0 0 4px; color: rgba($white, 0.5); }
+}
+
+.tarjeta__acciones {
+  grid-column: span 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid rgba($white, 0.05);
+  padding-top: 10px;
+}
+
+.btn-mini {
+  border: 1px solid rgba($white, 0.15);
+  background: transparent;
+  color: $white;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover { background: rgba($white, 0.06); }
+
+  &--peligro { border-color: rgba(#ef4444, 0.4); color: #ef4444; }
+  &--aceptar { border-color: #22c55e; background: rgba(#22c55e, 0.15); color: #22c55e; font-weight: 700; }
+  &--eliminar { border-color: rgba($white, 0.08); color: $text-muted; }
+}

@@ -1,0 +1,227 @@
+$fenix-dark-bg: #0a0a0a;
+$fenix-card-bg: #141414;
+$fenix-input-bg: #1e1e1e;
+$fenix-gold: #ffc129;
+$fenix-gold-hover: #e0a820;
+$white: #ffffff;
+$text-muted: #94a3b8;
+$border-color: rgba(255, 193, 41, 0.15);
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: $fenix-dark-bg;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 20px;
+  background-color: $fenix-card-bg;
+  border-bottom: 1px solid $border-color;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand-title {
+  color: $white;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  span {
+    color: $fenix-gold;
+    font-weight: 400;
+  }
+}
+
+.acciones-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+
+  a {
+    color: $text-muted;
+    text-decoration: none;
+    &:hover { color: $fenix-gold; }
+  }
+}
+
+.main-content {
+  padding: 20px 15px 60px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.card-captura {
+  background-color: $fenix-card-bg;
+  border-radius: 16px;
+  border: 1px solid $border-color;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+.header-captura {
+  margin-bottom: 8px;
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    color: $white;
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+}
+
+.intro {
+  color: $text-muted;
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0 0 20px;
+  line-height: 1.4;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.media-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: rgba($white, 0.02);
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid rgba($white, 0.03);
+
+  .status-text {
+    font-size: 0.82rem;
+    text-align: center;
+    margin: -4px 0 0;
+    color: $text-muted;
+  }
+}
+
+.foto-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba($white, 0.1);
+  height: 220px;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-weight: 500;
+    margin-bottom: 7px;
+    color: $white;
+    font-size: 0.88rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 8px;
+    background-color: $fenix-input-bg;
+    border: 1px solid rgba($white, 0.1);
+    color: $white;
+    font-size: 0.92rem;
+    box-sizing: border-box;
+    transition: $transition;
+
+    &::placeholder { color: rgba($white, 0.25); }
+
+    &:focus {
+      outline: none;
+      border-color: $fenix-gold;
+      background-color: #222;
+      box-shadow: 0 0 0 3px rgba($fenix-gold, 0.15);
+    }
+  }
+}
+
+.grid-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.btn-action {
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: center;
+  background-color: transparent;
+  border: 1px solid $fenix-gold;
+  color: $fenix-gold;
+  transition: $transition;
+
+  &:hover { background-color: rgba($fenix-gold, 0.08); }
+}
+
+.btn-photo-label {
+  display: block;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.exito {
+  color: #22c55e;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.btn-submit {
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background-color: $fenix-gold;
+  border: none;
+  color: #000;
+  text-transform: uppercase;
+  transition: $transition;
+
+  &:hover:not(:disabled) { background-color: $fenix-gold-hover; }
+
+  &:disabled {
+    background-color: #3a3119;
+    color: rgba($white, 0.25);
+    cursor: not-allowed;
+  }
+}

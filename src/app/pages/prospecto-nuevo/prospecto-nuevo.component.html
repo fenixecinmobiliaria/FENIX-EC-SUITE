@@ -1,0 +1,55 @@
+<div class="app-container">
+  <header class="top-bar">
+    <h1 class="brand-title">FENIX <span>CAPTACIÓN</span></h1>
+    <div class="acciones-header">
+      <a routerLink="/inicio">🏠 Inicio</a>
+      <a routerLink="/prospectos">Mis prospectos →</a>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="card-captura">
+      <div class="header-captura">
+        <h2>Nuevo letrero visto</h2>
+      </div>
+      <p class="intro">
+        Solo la foto del anuncio y la ubicación. Cuando llames y el dueño acepte, desde
+        "Mis prospectos" abres el formulario completo con todos los datos de la propiedad.
+      </p>
+
+      <form (ngSubmit)="guardar()">
+        <div class="media-section">
+          <label class="btn-action btn-photo-label">
+            📷 Tomar Foto del Anuncio
+            <input type="file" accept="image/*" capture="environment" (change)="onFotoCapturada($event)" hidden />
+          </label>
+
+          <div class="foto-preview" *ngIf="fotoPreview()">
+            <img [src]="fotoPreview()" alt="Vista previa del anuncio" />
+          </div>
+
+          <button type="button" class="btn-action" (click)="capturarUbicacion()">📍 Obtener Ubicación GPS</button>
+          <p class="status-text">{{ statusGps() }}</p>
+        </div>
+
+        <div class="grid-inputs">
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input type="text" [(ngModel)]="CIUDAD" name="ciudad" />
+          </div>
+          <div class="form-group">
+            <label>Sector (referencia, opcional)</label>
+            <input type="text" [(ngModel)]="Direccion_Sector" name="direccion" placeholder="Ej: cerca del parque..." />
+          </div>
+        </div>
+
+        <p class="error full" *ngIf="error()">{{ error() }}</p>
+        <p class="exito full" *ngIf="exito()">{{ exito() }}</p>
+
+        <button type="submit" class="btn-submit full" [disabled]="guardando()">
+          {{ guardando() ? 'GUARDANDO…' : 'GUARDAR PROSPECTO' }}
+        </button>
+      </form>
+    </div>
+  </main>
+</div>

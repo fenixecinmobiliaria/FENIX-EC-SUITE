@@ -87,12 +87,20 @@ export class FirestorePropiedadesService {
   /**
    * Crea una propiedad nueva en Estado "Borrador" — la deja pendiente de pasar por la
    * pantalla de aprobación antes de ser visible en el sitio, el bot y Facebook.
+   *
+   * `fotosExistentes` son URLs ya subidas de antes (ej. la foto del letrero de un
+   * Prospecto ya aceptado) — van primero en el arreglo, así quedan como portada salvo
+   * que el captador agregue y reordene otras.
    */
-  async crearBorrador(datos: Omit<PropiedadFirestore, 'id' | 'imagenes'>, fotos: File[]): Promise<string> {
+  async crearBorrador(
+    datos: Omit<PropiedadFirestore, 'id' | 'imagenes'>,
+    fotos: File[],
+    fotosExistentes: string[] = [],
+  ): Promise<string> {
     const ipd = datos.IPD;
-    const imagenes: string[] = [];
+    const imagenes: string[] = [...fotosExistentes];
     for (let i = 0; i < fotos.length; i++) {
-      imagenes.push(await this.subirFoto(ipd, fotos[i], i));
+      imagenes.push(await this.subirFoto(ipd, fotos[i], imagenes.length + i));
     }
 
     const payload: Record<string, unknown> = {
@@ -101,7 +109,7 @@ export class FirestorePropiedadesService {
       Estado: 'Borrador',
       imagenes,
       ImagenFolder: `imagenes_propiedades/${ipd}`,
-      capturadoPor: this.auth.currentUser?.email ?? 'Desconocido',
+      capturadoPor: datos.capturadoPor || this.auth.currentUser?.email || 'Desconocido',
       fechaCreacion: serverTimestamp(),
     };
 
