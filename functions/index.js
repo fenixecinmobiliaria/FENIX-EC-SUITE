@@ -95,6 +95,25 @@ async function llamarGraphApi(path, params) {
   return data;
 }
 
+/**
+ * El secreto FACEBOOK_PAGE_TOKEN guarda el token del Usuario del Sistema "Employee"
+ * (el que tiene asignado permiso de "Contenido" sobre la Página). Facebook NO deja
+ * publicar en una Página usando ese token directo — hay que cambiarlo por el token
+ * específico de la Página, que se obtiene con esta llamada. Se hace en cada
+ * publicación (no se cachea) para no depender de que alguien lo regenere a mano.
+ */
+async function obtenerTokenDePagina(tokenSistema) {
+  const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${FACEBOOK_PAGE_ID}?fields=access_token&access_token=${encodeURIComponent(tokenSistema)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error || !data.access_token) {
+    throw new Error(
+      `No se pudo obtener el token de la Página a partir del Usuario del Sistema: ${data.error?.message || res.statusText} (código ${data.error?.code ?? res.status}). Revisa que "Employee" siga teniendo el permiso de Contenido asignado sobre la Página.`
+    );
+  }
+  return data.access_token;
+}
+
 /** Sube una foto sin publicarla todavía (Facebook la descarga directo de la URL de Storage). */
 async function subirFotoSinPublicar(pageToken, imageUrl) {
   const data = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/photos`, {
@@ -161,11 +180,11 @@ exports.publicarPropiedad = onCall(
     }
 
     const nuevoEstado = propiedad.Precio_Venta ? "Venta" : "Renta";
-    const pageToken = FACEBOOK_PAGE_TOKEN.value();
     const mensaje = construirDescripcion(propiedad);
 
     let postId;
     try {
+      const pageToken = await obtenerTokenDePagina(FACEBOOK_PAGE_TOKEN.value());
       logger.info(`Publicando ${imagenes.length} fotos en Facebook para ${propiedadId}...`);
       const photoIds = [];
       for (const url of imagenes) {
