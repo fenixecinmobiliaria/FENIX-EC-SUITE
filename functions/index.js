@@ -14,14 +14,21 @@
  *      el sitio público y el bot de WhatsApp puede recomendarla.
  *
  * Secreto requerido (configurar con `firebase functions:secrets:set FACEBOOK_PAGE_TOKEN`):
- *   FACEBOOK_PAGE_TOKEN — Token de acceso de la PÁGINA de Facebook "Inmobiliaria Fenix EC"
- *   (id 61593225308023), con permisos pages_manage_posts + pages_read_engagement.
- *   OJO: el WHATSAPP_TOKEN que ya existe para el bot NO sirve para esto — sus scopes
- *   son solo de WhatsApp Business (business_management, whatsapp_business_management,
- *   whatsapp_business_messaging), no incluyen permiso para publicar en la Página.
- *   Hay que generar un token de Página nuevo desde Meta Business Suite (con el mismo
- *   Usuario del Sistema "Employee", una vez que tenga asignado el rol de "Editor de
- *   contenido" o similar sobre la Página) y guardarlo como este secreto.
+ *   FACEBOOK_PAGE_TOKEN — Token de acceso de PÁGINA (no de usuario, no de Usuario del
+ *   Sistema) para "Inmobiliaria Fenix EC", con permisos pages_manage_posts +
+ *   pages_read_engagement + pages_show_list. Se obtiene desde el Graph API Explorer
+ *   (developers.facebook.com/tools/explorer), app "Fenix EC Bot Atencion" → sección
+ *   "Tokens de acceso a la página" → elegir la página.
+ *
+ *   OJO 1: el WHATSAPP_TOKEN que ya existe para el bot NO sirve para esto — sus scopes
+ *   son solo de WhatsApp Business, no incluyen permiso para publicar en la Página.
+ *
+ *   OJO 2 (importante): la Página tiene DOS ids distintos —
+ *   `61593225308023` es el id "de perfil" (el que aparece en la URL pública,
+ *   facebook.com/profile.php?id=61593225308023), pero el id real que entiende la
+ *   Graph API para publicar es `1316143338243282` (FACEBOOK_PAGE_ID abajo). Si
+ *   `me/accounts` o el debugger muestran un id distinto al de la URL, es normal —
+ *   confirmado que ambos ids redirigen a la misma página real.
  */
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
@@ -36,7 +43,10 @@ const db = getFirestore();
 const FACEBOOK_PAGE_TOKEN = defineSecret("FACEBOOK_PAGE_TOKEN");
 
 const GRAPH_API_VERSION = "v21.0";
-const FACEBOOK_PAGE_ID = "61593225308023"; // Página "Inmobiliaria Fenix EC"
+// Id real de Graph API para "Inmobiliaria Fenix EC" — distinto del id "de perfil"
+// (61593225308023) que aparece en la URL pública facebook.com/profile.php?id=...
+// Ambos ids son la misma página; este es el que acepta la Graph API para publicar.
+const FACEBOOK_PAGE_ID = "1316143338243282";
 
 const NEGOCIO = {
   telefonoHumano: "098 092 9669",
@@ -93,25 +103,6 @@ async function llamarGraphApi(path, params) {
     );
   }
   return data;
-}
-
-/**
- * El secreto FACEBOOK_PAGE_TOKEN guarda el token del Usuario del Sistema "Employee"
- * (el que tiene asignado permiso de "Contenido" sobre la Página). Facebook NO deja
- * publicar en una Página usando ese token directo — hay que cambiarlo por el token
- * específico de la Página, que se obtiene con esta llamada. Se hace en cada
- * publicación (no se cachea) para no depender de que alguien lo regenere a mano.
- */
-async function obtenerTokenDePagina(tokenSistema) {
-  const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${FACEBOOK_PAGE_ID}?fields=access_token&access_token=${encodeURIComponent(tokenSistema)}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok || data.error || !data.access_token) {
-    throw new Error(
-      `No se pudo obtener el token de la Página a partir del Usuario del Sistema: ${data.error?.message || res.statusText} (código ${data.error?.code ?? res.status}). Revisa que "Employee" siga teniendo el permiso de Contenido asignado sobre la Página.`
-    );
-  }
-  return data.access_token;
 }
 
 /** Sube una foto sin publicarla todavía (Facebook la descarga directo de la URL de Storage). */
@@ -185,7 +176,7 @@ exports.publicarPropiedad = onCall(
 
     let postId;
     try {
-      const pageToken = await obtenerTokenDePagina(FACEBOOK_PAGE_TOKEN.value());
+      const pageToken = FACEBOOK_PAGE_TOKEN.value();
       logger.info(`Publicando ${imagenes.length} fotos en Facebook para ${propiedadId}...`);
       const photoIds = [];
       for (const url of imagenes) {
