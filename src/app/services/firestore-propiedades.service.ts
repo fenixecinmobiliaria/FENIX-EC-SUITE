@@ -54,24 +54,26 @@ export class FirestorePropiedadesService {
     return docData(docRef, { idField: 'id' }) as Observable<PropiedadFirestore>;
   }
 
-  /** Genera el siguiente código IPD tipo FX-2026-014, revisando los códigos ya usados. */
+  /**
+   * Genera el siguiente código IPD con la MISMA convención que ya usa el sitio real
+   * (`inmobiliaria_fenix/src/app/pages/propiedad/propiedad.component.ts:generarCodigoIPD`):
+   * "av" + número incremental (av387, av388, ...) — sin año ni guiones.
+   */
   async generarSiguienteIPD(): Promise<string> {
-    const anio = new Date().getFullYear();
-    const prefijo = `FX-${anio}-`;
     try {
       const snapshot = await getDocs(this.propiedadesCollection);
       let maxNumero = 0;
       snapshot.forEach((docSnap) => {
         const ipd = (docSnap.data() as PropiedadFirestore).IPD || '';
-        if (ipd.startsWith(prefijo)) {
-          const numero = parseInt(ipd.slice(prefijo.length), 10);
+        if (/^av\d+$/i.test(ipd)) {
+          const numero = parseInt(ipd.slice(2), 10);
           if (!isNaN(numero) && numero > maxNumero) maxNumero = numero;
         }
       });
-      return `${prefijo}${String(maxNumero + 1).padStart(3, '0')}`;
+      return `av${maxNumero + 1}`;
     } catch (e) {
-      console.error('No se pudo calcular el siguiente código IPD, usando respaldo por fecha:', e);
-      return `${prefijo}${Date.now().toString().slice(-6)}`;
+      console.error('No se pudo calcular el siguiente código IPD:', e);
+      throw e;
     }
   }
 
