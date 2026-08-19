@@ -3,28 +3,28 @@
     <h1 class="brand-title">FENIX <span>CAPTACIÓN</span></h1>
     <div class="acciones-header">
       <a routerLink="/inicio">🏠 Inicio</a>
-      <a routerLink="/prospectos/nuevo">+ Nuevo prospecto</a>
+      <a routerLink="/captura">+ Nueva Captación</a>
     </div>
   </header>
 
   <main class="main-content">
     <h2 class="titulo">Mis prospectos</h2>
-    <p class="ayuda">Letreros vistos en la calle. Registra qué te dijeron al llamar, y cuando el dueño acepte, dale "Aceptó" para pasar al formulario completo.</p>
+    <p class="ayuda">Letreros vistos en la calle. Ábrelos para seguir con la llamada donde la dejaste.</p>
 
     <ng-container *ngIf="prospectos$ | async as prospectos">
       <p class="vacio" *ngIf="prospectos.length === 0">
-        No tienes prospectos todavía. Empieza con "+ Nuevo prospecto" arriba.
+        No tienes prospectos pendientes. Empieza con "+ Nueva Captación" arriba.
       </p>
 
       <div class="lista">
-        <div class="tarjeta" *ngFor="let p of prospectos">
+        <a class="tarjeta" *ngFor="let p of prospectos" [routerLink]="['/captura']" [queryParams]="{ prospectoId: p.id }">
           <div class="tarjeta__img" [style.backgroundImage]="'url(' + p.fotoLetrero + ')'"></div>
 
           <div class="tarjeta__info">
             <span class="badge" [ngClass]="claseEstado(p.estado)">{{ p.estado }}</span>
-            <strong *ngIf="p.Direccion_Sector">{{ p.Direccion_Sector }}</strong>
+            <strong>{{ p.tipo }} · {{ p.Modalidad }}</strong>
+            <span *ngIf="p.Direccion_Sector">{{ p.Direccion_Sector }}</span>
             <span class="muted">{{ p.CIUDAD }} · {{ p.fechaCreacion | date: 'dd/MM/yyyy HH:mm' }}</span>
-            <a *ngIf="p.linkMapa" [href]="p.linkMapa" target="_blank" rel="noopener" class="link-mapa">📍 Ver ubicación</a>
 
             <div class="intentos" *ngIf="p.intentos?.length">
               <div class="intento" *ngFor="let i of p.intentos">
@@ -34,15 +34,7 @@
               </div>
             </div>
           </div>
-
-          <div class="tarjeta__acciones" *ngIf="p.estado !== 'Aceptó'">
-            <button type="button" class="btn-mini" (click)="marcar(p, 'No contesta')">No contesta</button>
-            <button type="button" class="btn-mini" (click)="marcar(p, 'Va a consultar')">Va a consultar</button>
-            <button type="button" class="btn-mini btn-mini--peligro" (click)="marcar(p, 'Rechazó')">Rechazó</button>
-            <button type="button" class="btn-mini btn-mini--aceptar" (click)="aceptar(p)">✓ Aceptó</button>
-            <button type="button" class="btn-mini btn-mini--eliminar" (click)="eliminar(p)">Eliminar</button>
-          </div>
-        </div>
+        </a>
       </div>
     </ng-container>
   </main>

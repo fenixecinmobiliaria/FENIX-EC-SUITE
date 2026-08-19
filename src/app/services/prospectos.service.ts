@@ -6,6 +6,7 @@ import { Storage, getDownloadURL, ref, uploadBytes } from '@angular/fire/storage
 import { Auth } from '@angular/fire/auth';
 import { Observable, map } from 'rxjs';
 import { EstadoProspecto, Prospecto } from '../models/prospecto.model';
+import { TipoPropiedadKey } from '../models/detalle-tipo-propiedad';
 
 /**
  * "Mis prospectos": letreros vistos en la calle, antes de que el dueño acepte pagar
@@ -40,6 +41,8 @@ export class ProspectosService {
     linkMapa?: string;
     CIUDAD?: string;
     Direccion_Sector?: string;
+    tipo?: TipoPropiedadKey;
+    Modalidad?: 'Venta' | 'Renta';
     capturadoPor: string;
   }): Promise<string> {
     const payload: Record<string, unknown> = {

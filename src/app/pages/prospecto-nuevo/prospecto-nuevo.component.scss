@@ -88,6 +88,14 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 1.3rem;
     font-weight: 600;
   }
+
+  .capturado-por {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: $text-muted;
+
+    strong { color: $fenix-gold; }
+  }
 }
 
 .intro {
@@ -146,7 +154,7 @@ form {
     font-size: 0.88rem;
   }
 
-  input {
+  input, select {
     width: 100%;
     padding: 11px 13px;
     border-radius: 8px;
@@ -156,6 +164,7 @@ form {
     font-size: 0.92rem;
     box-sizing: border-box;
     transition: $transition;
+    font-family: inherit;
 
     &::placeholder { color: rgba($white, 0.25); }
 
@@ -224,4 +233,114 @@ form {
     color: rgba($white, 0.25);
     cursor: not-allowed;
   }
+}
+
+// ===================== Vista de seguimiento de llamada =====================
+
+.resumen-prospecto {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 14px;
+  margin-bottom: 18px;
+
+  &__img {
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    background-color: $fenix-input-bg;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    strong {
+      color: $white;
+      font-size: 1rem;
+      text-transform: capitalize;
+    }
+
+    .muted { color: $text-muted; font-size: 0.8rem; }
+
+    .link-mapa {
+      color: $fenix-gold;
+      font-size: 0.8rem;
+      text-decoration: none;
+      width: fit-content;
+      margin-top: 4px;
+      &:hover { text-decoration: underline; }
+    }
+  }
+}
+
+.ayuda-llamada {
+  color: $text-muted;
+  font-size: 0.88rem;
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+.botones-seguimiento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.btn-seg {
+  padding: 14px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: $transition;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &--gris {
+    background: rgba($white, 0.05);
+    border-color: rgba($white, 0.15);
+    color: $white;
+    &:hover:not(:disabled) { background: rgba($white, 0.1); }
+  }
+
+  &--azul {
+    background: rgba(#3b82f6, 0.12);
+    border-color: #3b82f6;
+    color: #60a5fa;
+    &:hover:not(:disabled) { background: rgba(#3b82f6, 0.2); }
+  }
+
+  &--rojo {
+    background: rgba(#ef4444, 0.1);
+    border-color: rgba(#ef4444, 0.5);
+    color: #ef4444;
+    &:hover:not(:disabled) { background: rgba(#ef4444, 0.18); }
+  }
+
+  &--verde {
+    background: rgba(#22c55e, 0.15);
+    border-color: #22c55e;
+    color: #22c55e;
+    &:hover:not(:disabled) { background: rgba(#22c55e, 0.25); }
+  }
+}
+
+.btn-eliminar-prospecto {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid rgba($white, 0.08);
+  color: $text-muted;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover:not(:disabled) { border-color: rgba(#ef4444, 0.4); color: #ef4444; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

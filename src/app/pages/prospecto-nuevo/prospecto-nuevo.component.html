@@ -4,52 +4,102 @@
     <div class="acciones-header">
       <a routerLink="/inicio">🏠 Inicio</a>
       <a routerLink="/prospectos">Mis prospectos →</a>
+      <button type="button" class="logout-btn" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
   </header>
 
   <main class="main-content">
     <div class="card-captura">
-      <div class="header-captura">
-        <h2>Nuevo letrero visto</h2>
-      </div>
-      <p class="intro">
-        Solo la foto del anuncio y la ubicación. Cuando llames y el dueño acepte, desde
-        "Mis prospectos" abres el formulario completo con todos los datos de la propiedad.
-      </p>
 
-      <form (ngSubmit)="guardar()">
-        <div class="media-section">
-          <label class="btn-action btn-photo-label">
-            📷 Tomar Foto del Anuncio
-            <input type="file" accept="image/*" capture="environment" (change)="onFotoCapturada($event)" hidden />
-          </label>
-
-          <div class="foto-preview" *ngIf="fotoPreview()">
-            <img [src]="fotoPreview()" alt="Vista previa del anuncio" />
-          </div>
-
-          <button type="button" class="btn-action" (click)="capturarUbicacion()">📍 Obtener Ubicación GPS</button>
-          <p class="status-text">{{ statusGps() }}</p>
+      <!-- ===================== VISTA: CREAR NUEVO PROSPECTO ===================== -->
+      <ng-container *ngIf="!prospectoActivo()">
+        <div class="header-captura">
+          <h2>Nueva Captación</h2>
+          <p class="capturado-por">Capturado por: <strong>{{ misIniciales() }}</strong></p>
         </div>
 
-        <div class="grid-inputs">
-          <div class="form-group">
-            <label>Ciudad</label>
-            <input type="text" [(ngModel)]="CIUDAD" name="ciudad" />
+        <form (ngSubmit)="guardar()">
+          <div class="media-section">
+            <label class="btn-action btn-photo-label">
+              📷 Tomar Foto del Anuncio
+              <input type="file" accept="image/*" capture="environment" (change)="onFotoCapturada($event)" hidden />
+            </label>
+
+            <div class="foto-preview" *ngIf="fotoPreview()">
+              <img [src]="fotoPreview()" alt="Vista previa del anuncio" />
+            </div>
+
+            <button type="button" class="btn-action" (click)="capturarUbicacion()">📍 Obtener Ubicación GPS</button>
+            <p class="status-text">{{ statusGps() }}</p>
           </div>
+
           <div class="form-group">
-            <label>Sector (referencia, opcional)</label>
-            <input type="text" [(ngModel)]="Direccion_Sector" name="direccion" placeholder="Ej: cerca del parque..." />
+            <label>Tipo de Propiedad</label>
+            <select [(ngModel)]="tipo" name="tipo" required>
+              <option value="">Seleccione...</option>
+              <option *ngFor="let t of tipos" [value]="t.key">{{ t.label }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Modalidad</label>
+            <select [(ngModel)]="Modalidad" name="modalidad" required>
+              <option value="Venta">Venta</option>
+              <option value="Renta">Renta</option>
+            </select>
+          </div>
+
+          <div class="grid-inputs">
+            <div class="form-group">
+              <label>Ciudad</label>
+              <input type="text" [(ngModel)]="CIUDAD" name="ciudad" />
+            </div>
+            <div class="form-group">
+              <label>Sector de referencia</label>
+              <input type="text" [(ngModel)]="Direccion_Sector" name="direccion" placeholder="Ej: cerca del parque..." />
+            </div>
+          </div>
+
+          <p class="error full" *ngIf="error()">{{ error() }}</p>
+          <p class="exito full" *ngIf="exito()">{{ exito() }}</p>
+
+          <button type="submit" class="btn-submit full" [disabled]="guardando()">
+            {{ guardando() ? 'GUARDANDO…' : 'GUARDAR PROSPECTO' }}
+          </button>
+        </form>
+      </ng-container>
+
+      <!-- ===================== VISTA: SEGUIMIENTO DE LLAMADA ===================== -->
+      <ng-container *ngIf="prospectoActivo() as p">
+        <div class="header-captura">
+          <h2>¿Qué te dijo el dueño?</h2>
+        </div>
+
+        <div class="resumen-prospecto">
+          <div class="resumen-prospecto__img" [style.backgroundImage]="'url(' + p.fotoLetrero + ')'"></div>
+          <div class="resumen-prospecto__info">
+            <strong>{{ p.tipo }} · {{ p.Modalidad }}</strong>
+            <span *ngIf="p.Direccion_Sector">{{ p.Direccion_Sector }}</span>
+            <span class="muted">{{ p.CIUDAD }} · Capturado por {{ p.capturadoPor }}</span>
+            <a *ngIf="p.linkMapa" [href]="p.linkMapa" target="_blank" rel="noopener" class="link-mapa">📍 Ver ubicación</a>
           </div>
         </div>
+
+        <p class="ayuda-llamada">Llama al número del anuncio y registra qué te dijeron:</p>
+
+        <div class="botones-seguimiento">
+          <button type="button" class="btn-seg btn-seg--gris" [disabled]="registrandoIntento()" (click)="marcar('No contesta')">No contesta</button>
+          <button type="button" class="btn-seg btn-seg--azul" [disabled]="registrandoIntento()" (click)="marcar('Va a consultar')">Va a consultar</button>
+          <button type="button" class="btn-seg btn-seg--rojo" [disabled]="registrandoIntento()" (click)="marcar('Rechazó')">Rechazó</button>
+          <button type="button" class="btn-seg btn-seg--verde" [disabled]="registrandoIntento()" (click)="marcar('Aceptó')">✓ Aceptó</button>
+        </div>
+
+        <button type="button" class="btn-eliminar-prospecto" [disabled]="registrandoIntento()" (click)="eliminar()">🗑️ Eliminar prospecto</button>
 
         <p class="error full" *ngIf="error()">{{ error() }}</p>
         <p class="exito full" *ngIf="exito()">{{ exito() }}</p>
+      </ng-container>
 
-        <button type="submit" class="btn-submit full" [disabled]="guardando()">
-          {{ guardando() ? 'GUARDANDO…' : 'GUARDAR PROSPECTO' }}
-        </button>
-      </form>
     </div>
   </main>
 </div>

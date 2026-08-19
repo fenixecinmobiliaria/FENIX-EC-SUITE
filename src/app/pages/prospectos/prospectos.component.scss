@@ -97,6 +97,13 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: grid;
   grid-template-columns: 90px 1fr;
   gap: 14px;
+  text-decoration: none;
+  transition: $transition;
+
+  &:hover {
+    border-color: rgba($fenix-gold, 0.4);
+    transform: translateY(-1px);
+  }
 }
 
 .tarjeta__img {

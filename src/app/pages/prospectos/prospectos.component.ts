@@ -1,10 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule, AsyncPipe, DatePipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ProspectosService } from '../../services/prospectos.service';
-import { EstadoProspecto, Prospecto } from '../../models/prospecto.model';
+import { EstadoProspecto } from '../../models/prospecto.model';
 
-/** Lista de prospectos del captador logueado, con el estado de cada llamada. */
+/**
+ * Lista de solo lectura de los prospectos del captador logueado — para retomar los
+ * que quedaron pendientes ("va a consultar", "no contesta"). Las acciones (marcar
+ * llamada, aceptar, eliminar) viven todas en /captura, para no duplicar esa lógica.
+ */
 @Component({
   selector: 'app-prospectos',
   standalone: true,
@@ -14,27 +18,8 @@ import { EstadoProspecto, Prospecto } from '../../models/prospecto.model';
 })
 export class ProspectosComponent {
   private readonly svc = inject(ProspectosService);
-  private readonly router = inject(Router);
 
   prospectos$ = this.svc.misProspectos$();
-
-  async marcar(p: Prospecto, estado: EstadoProspecto) {
-    let nota: string | undefined;
-    if (estado === 'Va a consultar' || estado === 'No contesta' || estado === 'Rechazó') {
-      nota = window.prompt('¿Alguna nota sobre la llamada? (opcional)') || undefined;
-    }
-    await this.svc.registrarIntento(p.id!, estado, nota);
-  }
-
-  aceptar(p: Prospecto) {
-    this.router.navigate(['/captura'], { queryParams: { prospectoId: p.id } });
-  }
-
-  async eliminar(p: Prospecto) {
-    const confirmado = window.confirm('¿Eliminar este prospecto? No se puede deshacer.');
-    if (!confirmado) return;
-    await this.svc.eliminar(p.id!);
-  }
 
   claseEstado(estado: EstadoProspecto): string {
     switch (estado) {
