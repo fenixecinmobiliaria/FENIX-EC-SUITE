@@ -24,11 +24,11 @@
     </p>
 
     <div class="tarjetas" *ngIf="borradores.length > 0">
-      <div class="tarjeta" *ngFor="let p of borradores">
+      <a class="tarjeta" *ngFor="let p of borradores" [routerLink]="['/real/aprobar', p.id]">
         <strong>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</strong>
         <span>{{ p.CIUDAD }} · IPD {{ p.IPD }}</span>
-        <span>{{ (p.imagenes || []).length }} fotos</span>
-      </div>
+        <span>{{ (p.imagenes || []).length }} fotos · capturado por {{ p.capturadoPor }}</span>
+      </a>
     </div>
   </ng-container>
 

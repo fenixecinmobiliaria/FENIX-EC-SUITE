@@ -1,0 +1,64 @@
+<div class="page">
+  <a class="volver" routerLink="/real">← Volver a datos reales</a>
+
+  <p *ngIf="cargando()" class="vacio">Cargando desde Firestore…</p>
+  <p *ngIf="!cargando() && !propiedad()" class="vacio">No se encontró esta propiedad en Firestore.</p>
+
+  <ng-container *ngIf="propiedad() as p">
+    <header class="encabezado">
+      <div>
+        <h1>{{ p.TipoPropiedad }} · {{ p.Direccion_Sector }}</h1>
+        <p class="meta">
+          {{ p.CIUDAD }} · {{ p.HAB }} hab · {{ p.BNO }} baños · {{ p.AreaCons }} m² ·
+          <strong *ngIf="p.Precio_Venta">${{ p.Precio_Venta }} (venta)</strong>
+          <strong *ngIf="p.Precio_Renta">${{ p.Precio_Renta }}/mes (renta)</strong>
+        </p>
+        <p class="captura">IPD {{ p.IPD }} · Capturado por {{ p.capturadoPor }}</p>
+      </div>
+      <span class="badge badge--real">🔴 Datos reales — Borrador</span>
+    </header>
+
+    <section class="bloque">
+      <h2>1. Ordena las fotos (la primera es la portada)</h2>
+      <p class="ayuda">Arrastra para ordenar. Haz clic en "Elegir como portada" para poner una foto primero.</p>
+
+      <div class="grid-fotos" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="drop($event)">
+        <div class="foto" *ngFor="let url of p.imagenes" cdkDrag>
+          <div class="foto__imagen" [style.backgroundImage]="'url(' + url + ')'"></div>
+          <span class="foto__portada-badge" *ngIf="esPortada(url)">★ Portada</span>
+          <button
+            type="button"
+            class="foto__boton"
+            [class.foto__boton--activo]="esPortada(url)"
+            (click)="elegirPortada(url)"
+          >
+            {{ esPortada(url) ? 'Es la portada' : 'Elegir como portada' }}
+          </button>
+          <div class="foto__arrastrar" cdkDragHandle>⠿ arrastrar</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bloque">
+      <h2>2. Revisa el texto para publicar</h2>
+      <textarea class="texto-editor" rows="4" [(ngModel)]="p.Extras"></textarea>
+    </section>
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+
+    <footer class="acciones">
+      <button type="button" class="btn btn--secundario" (click)="guardarCambios()" [disabled]="guardando() || publicando()">
+        {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+      <button type="button" class="btn btn--primario" (click)="aprobarYPublicar()" [disabled]="publicando() || publicado()">
+        <span *ngIf="!publicando() && !publicado()">Aprobar y publicar (real)</span>
+        <span *ngIf="publicando()">Publicando…</span>
+        <span *ngIf="publicado()">✓ Publicado</span>
+      </button>
+    </footer>
+
+    <p class="confirmacion" *ngIf="publicado()">
+      Propiedad publicada en el catálogo real y el bot de WhatsApp. Volviendo a la lista…
+    </p>
+  </ng-container>
+</div>

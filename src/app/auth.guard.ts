@@ -3,8 +3,25 @@ import { CanActivateFn, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './services/auth.service';
 
-/** Protege las rutas que leen/escriben datos reales: exige sesión + rol admin. */
+/**
+ * Protege rutas que requieren sesión, sin importar el rol (ej. captación en campo).
+ * Cualquier cuenta creada en Firebase Auth de `finalinmobiliaria` con un documento
+ * `User/{uid}` (rol admin o captador) puede entrar.
+ */
 export const authGuard: CanActivateFn = async () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const user = await firstValueFrom(authService.authState$);
+  if (!user) {
+    router.navigate(['/login']);
+    return false;
+  }
+  return true;
+};
+
+/** Protege rutas administrativas (datos reales, aprobación, publicación): exige rol admin. */
+export const adminGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -19,6 +36,5 @@ export const authGuard: CanActivateFn = async () => {
     router.navigate(['/login']);
     return false;
   }
-
   return true;
 };

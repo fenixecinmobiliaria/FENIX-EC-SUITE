@@ -1,0 +1,117 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <h1>Captación en campo</h1>
+      <p class="subtitle">Se guarda como Borrador en el catálogo real — no se publica hasta que un admin lo apruebe.</p>
+    </div>
+    <div class="acciones-header">
+      <a routerLink="/">Datos de prueba</a>
+      <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <form class="form" (ngSubmit)="guardarBorrador()">
+    <div class="fila">
+      <label>
+        Tipo de propiedad
+        <select name="tipo" [(ngModel)]="TipoPropiedad">
+          <option>Casa</option>
+          <option>Departamento</option>
+          <option>Terreno</option>
+          <option>Local Comercial</option>
+          <option>Oficina</option>
+          <option>Otro</option>
+        </select>
+      </label>
+
+      <label>
+        Modalidad
+        <select name="modalidad" [(ngModel)]="Modalidad">
+          <option value="Venta">Venta</option>
+          <option value="Renta">Renta</option>
+        </select>
+      </label>
+
+      <label>
+        Precio ($)
+        <input type="number" name="precio" [(ngModel)]="Precio" min="0" required />
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>
+        Ciudad
+        <input type="text" name="ciudad" [(ngModel)]="CIUDAD" required />
+      </label>
+
+      <label class="ancho-doble">
+        Dirección / sector
+        <input type="text" name="direccion" [(ngModel)]="Direccion_Sector" required />
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>
+        Habitaciones
+        <input type="number" name="hab" [(ngModel)]="HAB" min="0" />
+      </label>
+      <label>
+        Baños
+        <input type="number" name="bno" [(ngModel)]="BNO" min="0" />
+      </label>
+      <label>
+        Área construida (m²)
+        <input type="number" name="areaCons" [(ngModel)]="AreaCons" min="0" />
+      </label>
+      <label>
+        Área terreno (m²)
+        <input type="number" name="areaTerreno" [(ngModel)]="AreaTerreno" min="0" />
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>
+        Amoblado
+        <select name="amoblado" [(ngModel)]="Amoblado">
+          <option value="No">No</option>
+          <option value="Sí">Sí</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="bloque-completo">
+      Descripción / observaciones
+      <textarea name="extras" rows="3" [(ngModel)]="Extras" placeholder="Ej: casa de dos plantas, cocina americana, jardín amplio…"></textarea>
+    </label>
+
+    <section class="bloque-fotos">
+      <h2>Fotos</h2>
+      <p class="ayuda">Toma o elige varias fotos. En la pantalla de aprobación se ordenan y se elige la portada.</p>
+
+      <div class="grid-fotos">
+        <div class="foto" *ngFor="let f of fotos(); let i = index">
+          <div class="foto__imagen" [style.backgroundImage]="'url(' + f.previewUrl + ')'"></div>
+          <button type="button" class="foto__quitar" (click)="quitarFoto(i)">Quitar</button>
+        </div>
+
+        <label class="agregar-foto">
+          <input type="file" accept="image/*" capture="environment" multiple (change)="onFotosSeleccionadas($event)" hidden />
+          + Agregar fotos
+        </label>
+      </div>
+    </section>
+
+    <section class="bloque-gps">
+      <h2>Ubicación</h2>
+      <button type="button" class="btn btn--secundario" (click)="capturarUbicacion()">📍 Capturar ubicación GPS</button>
+      <span class="gps-status">{{ statusGps }}</span>
+    </section>
+
+    <p class="error" *ngIf="error()">{{ error() }}</p>
+    <p class="exito" *ngIf="exito()">{{ exito() }}</p>
+
+    <button type="submit" class="btn btn--primario" [disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : 'Guardar como Borrador' }}
+    </button>
+  </form>
+</div>

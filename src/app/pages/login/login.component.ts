@@ -25,16 +25,16 @@ export class LoginComponent {
     this.error.set(null);
     this.cargando.set(true);
     try {
-      const esAdmin = await this.authService.logInWithEmailAndPassword({
+      const rol = await this.authService.logInWithEmailAndPassword({
         email: this.email,
         password: this.password,
       });
-      if (!esAdmin) {
-        this.error.set('Esta cuenta no tiene permiso de administrador en Fenix EC.');
+      if (!rol) {
+        this.error.set('Esta cuenta no tiene un rol asignado en Fenix EC. Pide al administrador que lo configure.');
         await this.authService.logOut();
         return;
       }
-      this.router.navigate(['/real']);
+      this.router.navigate([rol === 'admin' ? '/real' : '/captura']);
     } catch (e: any) {
       this.error.set('No se pudo iniciar sesión. Revisa el correo y la contraseña.');
       console.error(e);

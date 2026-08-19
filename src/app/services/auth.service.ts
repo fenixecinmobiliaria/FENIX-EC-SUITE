@@ -23,24 +23,28 @@ export class AuthService {
 
   readonly authState$: Observable<User | null> = authState(this.auth);
 
-  async logInWithEmailAndPassword(credential: Credential): Promise<boolean> {
+  /** Inicia sesión y devuelve el rol asignado en `User/{uid}.rol` (o null si no tiene). */
+  async logInWithEmailAndPassword(credential: Credential): Promise<string | null> {
     const userCredential = await signInWithEmailAndPassword(this.auth, credential.email, credential.password);
-    return this.checkUserRole(userCredential.user.uid);
+    return this.obtenerRol(userCredential.user.uid);
   }
 
-  async checkUserRole(userId: string): Promise<boolean> {
+  async obtenerRol(userId: string): Promise<string | null> {
     try {
       const userRef = doc(this.firestore, 'User', userId);
       const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
-        const data = userDoc.data();
-        return data?.['rol'] === 'admin';
+        return userDoc.data()?.['rol'] ?? null;
       }
-      return false;
+      return null;
     } catch (e) {
-      console.error('Error al verificar rol de usuario:', e);
-      return false;
+      console.error('Error al leer el rol de usuario:', e);
+      return null;
     }
+  }
+
+  async checkUserRole(userId: string): Promise<boolean> {
+    return (await this.obtenerRol(userId)) === 'admin';
   }
 
   getCurrentUser(): User | null {
