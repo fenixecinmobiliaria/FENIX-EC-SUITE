@@ -1,130 +1,322 @@
-<div class="page">
-  <header class="page__header">
-    <div>
-      <h1>Captación en campo</h1>
-      <p class="subtitle">Se guarda como Borrador en el catálogo real — no se publica hasta que un admin lo apruebe.</p>
-    </div>
+<div class="app-container">
+  <header class="top-bar">
+    <h1 class="brand-title">FENIX <span>CAPTACIÓN</span></h1>
     <div class="acciones-header">
       <a routerLink="/inicio">🏠 Inicio</a>
-      <a routerLink="/carga-directa">¿Te la compartió otra inmobiliaria? →</a>
-      <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
+      <a routerLink="/carga-directa">Propiedad compartida →</a>
+      <button type="button" class="logout-btn" (click)="cerrarSesion()">Cerrar sesión</button>
     </div>
   </header>
 
-  <form class="form" (ngSubmit)="guardarBorrador()">
-    <div class="fila">
-      <label>
-        Tipo de propiedad
-        <select name="tipo" [(ngModel)]="TipoPropiedad">
-          <option>Casa</option>
-          <option>Departamento</option>
-          <option>Terreno</option>
-          <option>Local Comercial</option>
-          <option>Oficina</option>
-          <option>Otro</option>
-        </select>
-      </label>
+  <main class="main-content">
+    <div class="card-captura">
+      <div class="header-captura">
+        <h2>Nueva Captación</h2>
+      </div>
 
-      <label>
-        Modalidad
-        <select name="modalidad" [(ngModel)]="Modalidad">
-          <option value="Venta">Venta</option>
-          <option value="Renta">Renta</option>
-        </select>
-      </label>
+      <form (ngSubmit)="guardarBorrador()">
+        <div class="media-section">
+          <button type="button" class="btn-action" (click)="capturarUbicacion()">
+            📍 Obtener Ubicación GPS
+          </button>
+          <p class="status-text">{{ statusGps() }}</p>
 
-      <label>
-        Precio ($)
-        <input type="number" name="precio" [(ngModel)]="Precio" min="0" required />
-      </label>
-    </div>
+          <label class="btn-action btn-photo-label">
+            📷 Agregar Fotos
+            <input type="file" accept="image/*" capture="environment" multiple (change)="onFotosSeleccionadas($event)" hidden />
+          </label>
 
-    <div class="fila">
-      <label>
-        Ciudad
-        <input type="text" name="ciudad" [(ngModel)]="CIUDAD" required />
-      </label>
-
-      <label class="ancho-doble">
-        Dirección / sector
-        <input type="text" name="direccion" [(ngModel)]="Direccion_Sector" required />
-      </label>
-    </div>
-
-    <div class="fila">
-      <label>
-        Habitaciones
-        <input type="number" name="hab" [(ngModel)]="HAB" min="0" />
-      </label>
-      <label>
-        Baños
-        <input type="number" name="bno" [(ngModel)]="BNO" min="0" />
-      </label>
-      <label>
-        Área construida (m²)
-        <input type="number" name="areaCons" [(ngModel)]="AreaCons" min="0" />
-      </label>
-      <label>
-        Área terreno (m²)
-        <input type="number" name="areaTerreno" [(ngModel)]="AreaTerreno" min="0" />
-      </label>
-    </div>
-
-    <div class="fila">
-      <label>
-        Amoblado
-        <select name="amoblado" [(ngModel)]="Amoblado">
-          <option value="No">No</option>
-          <option value="Sí">Sí</option>
-        </select>
-      </label>
-    </div>
-
-    <label class="bloque-completo">
-      Descripción / observaciones
-      <textarea name="extras" rows="3" [(ngModel)]="Extras" placeholder="Ej: casa de dos plantas, cocina americana, jardín amplio…"></textarea>
-    </label>
-
-    <section class="bloque-fotos">
-      <h2>Fotos</h2>
-      <p class="ayuda">Toma o elige varias fotos. En la pantalla de aprobación se ordenan y se elige la portada.</p>
-
-      <div class="grid-fotos">
-        <div class="foto" *ngFor="let f of fotos(); let i = index">
-          <div class="foto__imagen" [style.backgroundImage]="'url(' + f.previewUrl + ')'"></div>
-          <button type="button" class="foto__quitar" (click)="quitarFoto(i)">Quitar</button>
+          <div class="grid-fotos" *ngIf="fotos().length > 0">
+            <div class="foto-mini" *ngFor="let f of fotos(); let i = index">
+              <img [src]="f.previewUrl" alt="" />
+              <button type="button" class="foto-mini__quitar" (click)="quitarFoto(i)">✕</button>
+            </div>
+          </div>
         </div>
 
-        <label class="agregar-foto">
-          <input type="file" accept="image/*" capture="environment" multiple (change)="onFotosSeleccionadas($event)" hidden />
-          + Agregar fotos
-        </label>
-      </div>
-    </section>
+        <div class="form-group">
+          <label>Modalidad de Captación</label>
+          <select [(ngModel)]="Modalidad" name="modalidad" required>
+            <option value="Venta">Venta</option>
+            <option value="Renta">Renta</option>
+          </select>
+        </div>
 
-    <section class="bloque-gps">
-      <h2>Ubicación</h2>
-      <button type="button" class="btn btn--secundario" (click)="capturarUbicacion()">📍 Capturar ubicación GPS</button>
-      <span class="gps-status">{{ statusGps() }}</span>
-    </section>
+        <div class="form-group">
+          <label>Tipo de Propiedad</label>
+          <select [(ngModel)]="tipo" name="tipo" required>
+            <option value="">Seleccione...</option>
+            <option *ngFor="let t of tipos" [value]="t.key">{{ t.label }}</option>
+          </select>
+        </div>
 
-    <p class="error" *ngIf="error()">{{ error() }}</p>
-    <p class="exito" *ngIf="exito()">{{ exito() }}</p>
+        <div class="form-group">
+          <label>Amoblado</label>
+          <select [(ngModel)]="Amoblado" name="amoblado">
+            <option value="No">Sin amoblar</option>
+            <option value="Sí">Amoblado</option>
+          </select>
+        </div>
 
-    <div class="acciones-form">
-      <button type="submit" class="btn btn--primario" [disabled]="guardando() || publicando()">
-        {{ guardando() ? 'Guardando…' : 'Guardar como Borrador' }}
-      </button>
+        <div class="grid-inputs">
+          <div class="form-group">
+            <label>Ciudad</label>
+            <input type="text" [(ngModel)]="CIUDAD" name="ciudad" required />
+          </div>
+          <div class="form-group">
+            <label>Dirección / Sector</label>
+            <input type="text" [(ngModel)]="Direccion_Sector" name="direccion" required />
+          </div>
+        </div>
 
-      <button
-        type="button"
-        class="btn btn--facebook"
-        *ngIf="esAdmin()"
-        [disabled]="guardando() || publicando()"
-        (click)="guardarYPublicarFacebook()"
-      >
-        {{ publicando() ? 'Publicando…' : '📘 Facebook' }}
-      </button>
+        <!-- ===================== DETALLES POR TIPO ===================== -->
+        <div *ngIf="tipo" class="dynamic-details-container">
+
+          <div *ngIf="tipo === 'casa'">
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>N° Habitaciones</label><input type="number" [(ngModel)]="detCasa.habitaciones" name="c_hab" /></div>
+              <div class="form-group"><label>Baños Completos</label><input type="number" [(ngModel)]="detCasa.banos_completos" name="c_bc" /></div>
+              <div class="form-group"><label>Medios Baños</label><input type="number" [(ngModel)]="detCasa.medios_banos" name="c_mb" /></div>
+            </div>
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>N° Pisos Casa</label><input type="number" [(ngModel)]="detCasa.pisos" name="c_pisos" /></div>
+              <div class="form-group"><label>Área Terreno (m²)</label><input type="number" [(ngModel)]="detCasa.area_terreno_m2" name="c_at" /></div>
+              <div class="form-group"><label>Área Const. (m²)</label><input type="number" [(ngModel)]="detCasa.area_construida_m2" name="c_ac" /></div>
+            </div>
+            <div class="form-group"><label>Alícuota ($)</label><input type="number" [(ngModel)]="detCasa.alicuota" name="c_alic" placeholder="0.00" /></div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.garaje" name="c_garaje" /> Garaje</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.bodega" name="c_bodega" /> Bodega</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.lavanderia" name="c_lav" /> Lavandería</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.jardin" name="c_jar" /> Jardín</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.terraza" name="c_ter" /> Terraza</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.piscina" name="c_pis" /> Piscina</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.acepta_mascotas" name="c_masc" /> Mascotas</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detCasa.acepta_iva" name="c_iva" /> Acepta IVA</label>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'departamento'">
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>N° Habitaciones</label><input type="number" [(ngModel)]="detDep.habitaciones" name="d_hab" /></div>
+              <div class="form-group"><label>Baños Completos</label><input type="number" [(ngModel)]="detDep.banos_completos" name="d_bc" /></div>
+              <div class="form-group"><label>Medios Baños</label><input type="number" [(ngModel)]="detDep.medios_banos" name="d_mb" /></div>
+            </div>
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>Piso Edificio</label><input type="number" [(ngModel)]="detDep.piso_edificio" name="d_pe" /></div>
+              <div class="form-group"><label>N° Departamento</label><input type="text" [(ngModel)]="detDep.num_departamento" name="d_nd" placeholder="Ej. 3B" /></div>
+              <div class="form-group"><label>Área Útil (m²)</label><input type="number" [(ngModel)]="detDep.area_m2" name="d_area" /></div>
+            </div>
+            <div class="form-group"><label>Alícuota ($)</label><input type="number" [(ngModel)]="detDep.alicuota" name="d_alic" placeholder="0.00" /></div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.garaje" name="d_garaje" /> Garaje</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.bodega" name="d_bodega" /> Bodega</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.lavanderia" name="d_lav" /> Lavandería</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.terraza_balcon" name="d_terr" /> Terraza / Balcón</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.ascensor" name="d_asc" /> Ascensor</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.conserje" name="d_cons" /> Conserje</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.acepta_mascotas" name="d_masc" /> Mascotas</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detDep.acepta_iva" name="d_iva" /> Acepta IVA</label>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'terreno'">
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>Área Total (m²)</label><input type="number" [(ngModel)]="detTerreno.area_total_m2" name="t_area" required /></div>
+              <div class="form-group"><label>Frente (ml)</label><input type="number" [(ngModel)]="detTerreno.frente_ml" name="t_frente" /></div>
+              <div class="form-group"><label>Fondo (ml)</label><input type="number" [(ngModel)]="detTerreno.fondo_ml" name="t_fondo" /></div>
+            </div>
+            <div class="grid-inputs">
+              <div class="form-group">
+                <label>Forma del Terreno</label>
+                <select [(ngModel)]="detTerreno.forma" name="t_forma">
+                  <option value="Regular">Regular</option>
+                  <option value="Irregular">Irregular</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Topografía</label>
+                <select [(ngModel)]="detTerreno.topografia" name="t_topo">
+                  <option value="Plano">Plano</option>
+                  <option value="Pendiente leve">Pendiente leve</option>
+                  <option value="Pendiente fuerte">Pendiente fuerte</option>
+                  <option value="Irregular">Irregular</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Pisos que permite construir el IPRUS</label>
+              <input type="number" [(ngModel)]="detTerreno.pisos_permitidos_iprus" name="t_iprus_pisos" placeholder="Ej. 3" />
+            </div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.iprus_actualizado" name="t_iprus" /> IPRUS Actualizado</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.escritura_titulo" name="t_esc" /> Escritura / Título</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.services_basicos" name="t_serv" /> Servicios Básicos</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.cerramiento" name="t_cerr" /> Cerramiento</label>
+            </div>
+            <div class="form-group">
+              <label>Uso de Suelo (selección múltiple)</label>
+              <div class="checkbox-grid">
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.usoSuelo.Residencial" name="u_res" /> Residencial</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.usoSuelo.Comercial" name="u_com" /> Comercial</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.usoSuelo.Industrial" name="u_ind" /> Industrial</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.usoSuelo.Agricola" name="u_agr" /> Agrícola</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detTerreno.usoSuelo.Mixto" name="u_mix" /> Mixto</label>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'local'">
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>Área Útil (m²)</label><input type="number" [(ngModel)]="detLocal.area_m2" name="l_area" required /></div>
+              <div class="form-group">
+                <label>Piso / Ubicación</label>
+                <select [(ngModel)]="detLocal.piso" name="l_piso">
+                  <option value="PB">PB (Planta Baja)</option>
+                  <option value="Subsuelo">Subsuelo</option>
+                  <option value="1ro">1ro</option>
+                  <option value="2do">2do</option>
+                  <option value="3ro">3ro</option>
+                  <option value="4to o más">4to o más</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Altura Libre (m)</label><input type="number" [(ngModel)]="detLocal.altura_libre_m" name="l_altura" step="0.1" /></div>
+            </div>
+            <div class="form-group"><label>Frente de Vitrina (ml)</label><input type="number" [(ngModel)]="detLocal.frente_vitrina_ml" name="l_vitrina" /></div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.bano_propio" name="l_bano" /> Baño Propio</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.parqueadero" name="l_parq" /> Parqueadero</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.vitrina_calle" name="l_vcalle" /> Vitrina a la Calle</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.acceso_vehicular" name="l_aceveh" /> Acceso Vehicular</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.bodega_deposito" name="l_bodega" /> Bodega / Depósito</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.cocina_equipada" name="l_cocina" /> Cocina Equipada</label>
+            </div>
+            <div class="form-group">
+              <label>Uso Permitido (selección múltiple)</label>
+              <div class="checkbox-grid">
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.usoPermitido.Comercial" name="up_com" /> Comercial</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.usoPermitido.Oficina" name="up_ofic" /> Oficina</label>
+                <label class="chk-label"><input type="checkbox" [(ngModel)]="detLocal.usoPermitido.Restaurante" name="up_rest" /> Restaurante</label>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'bodega'">
+            <div class="grid-inputs-3">
+              <div class="form-group"><label>Área Total (m²)</label><input type="number" [(ngModel)]="detBodega.area_total_m2" name="b_area" required /></div>
+              <div class="form-group"><label>Altura Libre (m)</label><input type="number" [(ngModel)]="detBodega.altura_libre_m" name="b_altura" step="0.1" /></div>
+              <div class="form-group"><label>Frente (ml)</label><input type="number" [(ngModel)]="detBodega.frente_ml" name="b_frente" /></div>
+            </div>
+            <div class="grid-inputs">
+              <div class="form-group">
+                <label>Tipo de Piso</label>
+                <select [(ngModel)]="detBodega.tipo_piso" name="b_piso">
+                  <option value="Hormigon">Hormigón</option>
+                  <option value="Adoquin">Adoquín</option>
+                  <option value="Tierra">Tierra</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="form-group" *ngIf="detBodega.oficinas_incluidas"><label>Área Oficinas (m²)</label><input type="number" [(ngModel)]="detBodega.area_oficinas_m2" name="b_aof" /></div>
+            </div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.oficinas_incluidas" name="b_ofic" /> Oficinas Incluidas</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.acceso_vehicular_rampa" name="b_rampa" /> Rampa Vehicular</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.puerta_embarque" name="b_puerta" /> Puerta Embarque</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.grua_puente" name="b_grua" /> Grúa Puente</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.banos" name="b_banos" /> Baños</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.patio_maniobras" name="b_patio" /> Patio Maniobras</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detBodega.energia_trifasica" name="b_trif" /> Energía Trifásica</label>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'edificio'">
+            <div class="grid-inputs">
+              <div class="form-group"><label>N° de Pisos</label><input type="number" [(ngModel)]="detEdificio.numero_pisos" name="e_pisos" /></div>
+              <div class="form-group"><label>N° de Departamentos</label><input type="number" [(ngModel)]="detEdificio.numero_deptos" name="e_deptos" /></div>
+            </div>
+            <div class="grid-inputs">
+              <div class="form-group"><label>Área Terreno (m²)</label><input type="number" [(ngModel)]="detEdificio.area_terreno_m2" name="e_at" /></div>
+              <div class="form-group"><label>Área Const. Total (m²)</label><input type="number" [(ngModel)]="detEdificio.area_construida_total_m2" name="e_ac" /></div>
+            </div>
+            <div class="form-group">
+              <label>Estado del Edificio</label>
+              <select [(ngModel)]="detEdificio.estado" name="e_estado">
+                <option value="Nuevo">Nuevo</option>
+                <option value="Buen estado">Buen estado</option>
+                <option value="Requiere mejoras">Requiere mejoras</option>
+                <option value="Antiguo">Antiguo</option>
+              </select>
+            </div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.ascensor" name="e_asc" /> Ascensor</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.generador" name="e_gen" /> Generador</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.parqueaderos" name="e_parq" /> Parqueaderos</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.guardiania" name="e_guard" /> Guardianía</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.areas_comunales" name="e_comun" /> Áreas Comunales</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detEdificio.uso_mixto" name="e_mixto" /> Uso Mixto</label>
+            </div>
+          </div>
+
+          <div *ngIf="tipo === 'quinta'">
+            <div class="grid-inputs">
+              <div class="form-group"><label>Área Total (ha / m²)</label><input type="number" [(ngModel)]="detQuinta.area_total_ha_m2" name="q_atot" required /></div>
+              <div class="form-group"><label>Área Construida (m²)</label><input type="number" [(ngModel)]="detQuinta.area_construida_m2" name="q_ac" /></div>
+            </div>
+            <div class="grid-inputs">
+              <div class="form-group"><label>N° Habitaciones</label><input type="number" [(ngModel)]="detQuinta.habitaciones" name="q_hab" /></div>
+              <div class="form-group"><label>N° Baños</label><input type="number" [(ngModel)]="detQuinta.banos" name="q_banos" /></div>
+            </div>
+            <div class="form-group">
+              <label>Clasificación de la Propiedad</label>
+              <select [(ngModel)]="detQuinta.clasificacion" name="q_clase">
+                <option value="Quinta recreacional">Quinta recreacional</option>
+                <option value="Hacienda">Hacienda</option>
+                <option value="Finca productiva">Finca productiva</option>
+                <option value="Propiedad rural">Propiedad rural</option>
+              </select>
+            </div>
+            <div class="checkbox-grid">
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.casa_principal" name="q_cp" /> Casa Principal</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.casas_huespedes" name="q_ch" /> Casa Huéspedes</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.piscina" name="q_pis" /> Piscina</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.cancha_deportiva" name="q_cancha" /> Cancha Deportiva</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.area_agricola" name="q_agric" /> Área Agrícola</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.agua_riego" name="q_riego" /> Agua de Riego</label>
+              <label class="chk-label"><input type="checkbox" [(ngModel)]="detQuinta.acceso_pavimentado" name="q_pav" /> Acceso Pavimentado</label>
+            </div>
+          </div>
+        </div>
+        <!-- =================== FIN DETALLES POR TIPO =================== -->
+
+        <div class="form-group full">
+          <label>Precio {{ Modalidad === 'Renta' ? '(renta mensual $)' : '(venta $)' }}</label>
+          <input type="number" [(ngModel)]="Precio" name="precio" placeholder="0.00" required />
+        </div>
+
+        <div class="grid-inputs">
+          <div class="form-group"><label>Nombre del propietario</label><input type="text" [(ngModel)]="contactoNombre" name="c_nombre" placeholder="Ej. Juan Pérez" /></div>
+          <div class="form-group"><label>Teléfono de contacto</label><input type="tel" [(ngModel)]="contactoTelefono" name="c_tel" placeholder="099xxxxxxx" /></div>
+        </div>
+        <div class="form-group full"><label>Correo (opcional)</label><input type="email" [(ngModel)]="contactoEmail" name="c_email" placeholder="correo@ejemplo.com" /></div>
+
+        <div class="form-group full">
+          <label>Observaciones del captador</label>
+          <textarea [(ngModel)]="Extras" name="extras" placeholder="Referencias o detalles adicionales..."></textarea>
+        </div>
+
+        <p class="error full" *ngIf="error()">{{ error() }}</p>
+        <p class="exito full" *ngIf="exito()">{{ exito() }}</p>
+
+        <div class="acciones-form full">
+          <button type="submit" class="btn-submit" [disabled]="guardando() || publicando()">
+            {{ guardando() ? 'GUARDANDO…' : 'GUARDAR REGISTRO' }}
+          </button>
+          <button type="button" class="btn-facebook" *ngIf="esAdmin()" [disabled]="guardando() || publicando()" (click)="guardarYPublicarFacebook()">
+            {{ publicando() ? 'PUBLICANDO…' : '📘 FACEBOOK' }}
+          </button>
+        </div>
+      </form>
     </div>
-  </form>
+  </main>
 </div>

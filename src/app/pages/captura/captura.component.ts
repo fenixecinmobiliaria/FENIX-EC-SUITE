@@ -5,6 +5,12 @@ import { Router, RouterLink } from '@angular/router';
 import { FirestorePropiedadesService } from '../../services/firestore-propiedades.service';
 import { AuthService } from '../../services/auth.service';
 import { PropiedadFirestore } from '../../models/propiedad-firestore.model';
+import {
+  DetallesBodega, DetallesCasa, DetallesDep, DetallesEdificio, DetallesLocal, DetallesQuinta, DetallesTerreno,
+  TIPOS_PROPIEDAD, TipoPropiedadKey,
+  detallesBodegaVacio, detallesCasaVacio, detallesDepVacio, detallesEdificioVacio, detallesLocalVacio,
+  detallesQuintaVacio, detallesTerrenoVacio, mapearDetallesACamposReales,
+} from '../../models/detalle-tipo-propiedad';
 
 interface FotoPendiente {
   file: File;
@@ -12,19 +18,15 @@ interface FotoPendiente {
 }
 
 /**
- * Formulario de captación móvil — versión MVP.
+ * Formulario de captación móvil — mismos parámetros y mismo diseño (dark/gold) que
+ * `captacion-app` (el original), estandarizado para que ambos programas se vean y
+ * pregunten lo mismo. Diferencia real: aquí se escribe directo en
+ * `finalinmobiliaria/Propiedades` (Estado: "Borrador"), no en el Firebase aislado del
+ * captacion-app viejo, y se permiten varias fotos (el original solo dejaba una).
  *
- * A propósito NO reproduce todavía los formularios específicos por tipo de propiedad
- * (casa/depto/terreno/local/bodega/edificio/quinta) del `captacion-app` actual: son
- * campos genéricos suficientes para probar el flujo completo captación → aprobación →
- * publicación contra el catálogo real. Se amplía después si hace falta ese detalle.
- *
- * Escribe directamente en `finalinmobiliaria/Propiedades` con Estado: "Borrador".
  * Dos botones de guardado:
- *  - "Guardar como Borrador": lo normal — un admin la revisa/aprueba luego en /real.
- *  - "Facebook" (solo visible si quien está logueado es admin): guarda Y publica de
- *    una vez, sin pasar por la pantalla de aprobación — para cuando el propio admin
- *    captura y no necesita reordenar fotos antes de publicar.
+ *  - "Guardar como Borrador": un admin la revisa/aprueba luego en /real.
+ *  - "Facebook" (solo admin): guarda Y publica de una vez, sin pasar por /real.
  */
 @Component({
   selector: 'app-captura',
@@ -39,17 +41,26 @@ export class CapturaComponent {
   private readonly router = inject(Router);
   private readonly ngZone = inject(NgZone);
 
-  TipoPropiedad = 'Casa';
+  readonly tipos = TIPOS_PROPIEDAD;
+
+  tipo: TipoPropiedadKey | '' = '';
   Modalidad: 'Venta' | 'Renta' = 'Venta';
   Precio: number | null = null;
   CIUDAD = 'Cuenca';
   Direccion_Sector = '';
-  HAB: number | null = null;
-  BNO: number | null = null;
-  AreaCons: number | null = null;
-  AreaTerreno: number | null = null;
   Amoblado: 'Sí' | 'No' = 'No';
   Extras = '';
+  contactoNombre = '';
+  contactoTelefono = '';
+  contactoEmail = '';
+
+  detCasa: DetallesCasa = detallesCasaVacio();
+  detDep: DetallesDep = detallesDepVacio();
+  detTerreno: DetallesTerreno = detallesTerrenoVacio();
+  detLocal: DetallesLocal = detallesLocalVacio();
+  detBodega: DetallesBodega = detallesBodegaVacio();
+  detEdificio: DetallesEdificio = detallesEdificioVacio();
+  detQuinta: DetallesQuinta = detallesQuintaVacio();
 
   readonly fotos = signal<FotoPendiente[]>([]);
   readonly statusGps = signal('Sin capturar');
@@ -107,6 +118,7 @@ export class CapturaComponent {
   }
 
   private formularioValido(): string | null {
+    if (!this.tipo) return 'Elige el tipo de propiedad.';
     if (!this.Direccion_Sector.trim()) return 'Falta la dirección/sector.';
     if (!this.Precio || this.Precio <= 0) return 'Falta el precio.';
     if (this.fotos().length === 0) return 'Agrega al menos una foto.';
@@ -114,23 +126,39 @@ export class CapturaComponent {
   }
 
   private construirDatos(ipd: string): Omit<PropiedadFirestore, 'id' | 'imagenes'> {
+    const tipoInfo = TIPOS_PROPIEDAD.find((t) => t.key === this.tipo)!;
+    const camposTipo = mapearDetallesACamposReales(this.tipo as TipoPropiedadKey, {
+      casa: this.detCasa,
+      departamento: this.detDep,
+      terreno: this.detTerreno,
+      local: this.detLocal,
+      bodega: this.detBodega,
+      edificio: this.detEdificio,
+      quinta: this.detQuinta,
+    });
+
+    const contacto = [this.contactoNombre, this.contactoTelefono, this.contactoEmail].filter(Boolean).join(' · ');
+    const extrasCompleto = [this.Extras.trim(), contacto ? `Contacto: ${contacto}` : null].filter(Boolean).join('\n\n');
+
     return {
       IPD: ipd,
-      TipoPropiedad: this.TipoPropiedad,
+      TipoPropiedad: tipoInfo.nombreReal,
       Estado: 'Borrador',
       CIUDAD: this.CIUDAD,
       Direccion_Sector: this.Direccion_Sector.trim(),
       Precio_Venta: this.Modalidad === 'Venta' ? String(this.Precio) : undefined,
       Precio_Renta: this.Modalidad === 'Renta' ? String(this.Precio) : undefined,
-      HAB: this.HAB != null ? String(this.HAB) : '0',
-      BNO: this.BNO != null ? String(this.BNO) : '0',
-      AreaCons: this.AreaCons != null ? String(this.AreaCons) : '0',
-      AreaTerreno: this.AreaTerreno != null ? String(this.AreaTerreno) : '0',
+      HAB: '0',
+      BNO: '0',
+      AreaCons: '0',
+      AreaTerreno: '0',
       Amoblado: this.Amoblado,
-      Extras: this.Extras.trim(),
+      Extras: extrasCompleto,
       LinkMapa: this.linkMapa || undefined,
       origenCaptacion: 'campo',
-    };
+      TipoTransaccion: this.Modalidad,
+      ...camposTipo,
+    } as Omit<PropiedadFirestore, 'id' | 'imagenes'>;
   }
 
   async guardarBorrador() {
@@ -172,7 +200,7 @@ export class CapturaComponent {
     }
 
     const confirmado = window.confirm(
-      `Vas a guardar y publicar de inmediato "${this.TipoPropiedad} · ${this.Direccion_Sector}" en Facebook, ` +
+      `Vas a guardar y publicar de inmediato esta propiedad en Facebook, ` +
         'y quedará activa en el sitio y el bot de WhatsApp. La primera foto que agregaste será la portada. ¿Confirmas?',
     );
     if (!confirmado) return;
@@ -203,16 +231,22 @@ export class CapturaComponent {
   }
 
   private limpiarFormulario() {
-    this.TipoPropiedad = 'Casa';
+    this.tipo = '';
     this.Modalidad = 'Venta';
     this.Precio = null;
     this.Direccion_Sector = '';
-    this.HAB = null;
-    this.BNO = null;
-    this.AreaCons = null;
-    this.AreaTerreno = null;
     this.Amoblado = 'No';
     this.Extras = '';
+    this.contactoNombre = '';
+    this.contactoTelefono = '';
+    this.contactoEmail = '';
+    this.detCasa = detallesCasaVacio();
+    this.detDep = detallesDepVacio();
+    this.detTerreno = detallesTerrenoVacio();
+    this.detLocal = detallesLocalVacio();
+    this.detBodega = detallesBodegaVacio();
+    this.detEdificio = detallesEdificioVacio();
+    this.detQuinta = detallesQuintaVacio();
     this.fotos.set([]);
     this.statusGps.set('Sin capturar');
     this.linkMapa = '';

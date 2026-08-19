@@ -5,6 +5,12 @@ import { Router, RouterLink } from '@angular/router';
 import { FirestorePropiedadesService } from '../../services/firestore-propiedades.service';
 import { AuthService } from '../../services/auth.service';
 import { PropiedadFirestore } from '../../models/propiedad-firestore.model';
+import {
+  DetallesBodega, DetallesCasa, DetallesDep, DetallesEdificio, DetallesLocal, DetallesQuinta, DetallesTerreno,
+  TIPOS_PROPIEDAD, TipoPropiedadKey,
+  detallesBodegaVacio, detallesCasaVacio, detallesDepVacio, detallesEdificioVacio, detallesLocalVacio,
+  detallesQuintaVacio, detallesTerrenoVacio, mapearDetallesACamposReales,
+} from '../../models/detalle-tipo-propiedad';
 
 interface FotoPendiente {
   file: File;
@@ -13,13 +19,10 @@ interface FotoPendiente {
 
 /**
  * Segundo flujo de captación: propiedades que otra inmobiliaria o un cliente aliado
- * ya tiene lista (fotos + descripción) y comparte con Fenix EC para promocionarla
- * también. A diferencia de /captura, aquí NO hay foto de letrero ni GPS obligatorio
- * — solo se suben las fotos que enviaron y se pega/edita la descripción.
- *
- * Igual que /captura, escribe en `finalinmobiliaria/Propiedades` con Estado: "Borrador".
- * Dos botones de guardado: "Guardar como Borrador" (pasa por /real) o "Facebook"
- * (solo admin: guarda y publica de una vez, sin pasar por la aprobación).
+ * ya tiene lista (fotos + descripción) y comparte con Fenix EC. Mismos parámetros por
+ * tipo de propiedad y mismo diseño que /captura, para que ambos formularios queden
+ * estandarizados — la diferencia es que aquí NO hay foto de letrero ni GPS obligatorio,
+ * y se pide "compartida por" en vez del origen de campo.
  */
 @Component({
   selector: 'app-carga-directa',
@@ -33,19 +36,25 @@ export class CargaDirectaComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  TipoPropiedad = 'Casa';
+  readonly tipos = TIPOS_PROPIEDAD;
+
+  tipo: TipoPropiedadKey | '' = '';
   Modalidad: 'Venta' | 'Renta' = 'Venta';
   Precio: number | null = null;
   CIUDAD = 'Cuenca';
   Direccion_Sector = '';
-  HAB: number | null = null;
-  BNO: number | null = null;
-  AreaCons: number | null = null;
-  AreaTerreno: number | null = null;
   Amoblado: 'Sí' | 'No' = 'No';
   Extras = '';
   compartidaPor = '';
   linkMapa = '';
+
+  detCasa: DetallesCasa = detallesCasaVacio();
+  detDep: DetallesDep = detallesDepVacio();
+  detTerreno: DetallesTerreno = detallesTerrenoVacio();
+  detLocal: DetallesLocal = detallesLocalVacio();
+  detBodega: DetallesBodega = detallesBodegaVacio();
+  detEdificio: DetallesEdificio = detallesEdificioVacio();
+  detQuinta: DetallesQuinta = detallesQuintaVacio();
 
   readonly fotos = signal<FotoPendiente[]>([]);
   readonly esAdmin = signal(false);
@@ -74,6 +83,7 @@ export class CargaDirectaComponent {
   }
 
   private formularioValido(): string | null {
+    if (!this.tipo) return 'Elige el tipo de propiedad.';
     if (!this.Direccion_Sector.trim()) return 'Falta la dirección/sector.';
     if (!this.Precio || this.Precio <= 0) return 'Falta el precio.';
     if (!this.compartidaPor.trim()) return 'Indica qué inmobiliaria o contacto la compartió.';
@@ -82,24 +92,37 @@ export class CargaDirectaComponent {
   }
 
   private construirDatos(ipd: string): Omit<PropiedadFirestore, 'id' | 'imagenes'> {
+    const tipoInfo = TIPOS_PROPIEDAD.find((t) => t.key === this.tipo)!;
+    const camposTipo = mapearDetallesACamposReales(this.tipo as TipoPropiedadKey, {
+      casa: this.detCasa,
+      departamento: this.detDep,
+      terreno: this.detTerreno,
+      local: this.detLocal,
+      bodega: this.detBodega,
+      edificio: this.detEdificio,
+      quinta: this.detQuinta,
+    });
+
     return {
       IPD: ipd,
-      TipoPropiedad: this.TipoPropiedad,
+      TipoPropiedad: tipoInfo.nombreReal,
       Estado: 'Borrador',
       CIUDAD: this.CIUDAD,
       Direccion_Sector: this.Direccion_Sector.trim(),
       Precio_Venta: this.Modalidad === 'Venta' ? String(this.Precio) : undefined,
       Precio_Renta: this.Modalidad === 'Renta' ? String(this.Precio) : undefined,
-      HAB: this.HAB != null ? String(this.HAB) : '0',
-      BNO: this.BNO != null ? String(this.BNO) : '0',
-      AreaCons: this.AreaCons != null ? String(this.AreaCons) : '0',
-      AreaTerreno: this.AreaTerreno != null ? String(this.AreaTerreno) : '0',
+      HAB: '0',
+      BNO: '0',
+      AreaCons: '0',
+      AreaTerreno: '0',
       Amoblado: this.Amoblado,
       Extras: this.Extras.trim(),
       LinkMapa: this.linkMapa.trim() || undefined,
       origenCaptacion: 'compartida',
       compartidaPor: this.compartidaPor.trim(),
-    };
+      TipoTransaccion: this.Modalidad,
+      ...camposTipo,
+    } as Omit<PropiedadFirestore, 'id' | 'imagenes'>;
   }
 
   async guardarBorrador() {
@@ -141,7 +164,7 @@ export class CargaDirectaComponent {
     }
 
     const confirmado = window.confirm(
-      `Vas a guardar y publicar de inmediato "${this.TipoPropiedad} · ${this.Direccion_Sector}" en Facebook, ` +
+      `Vas a guardar y publicar de inmediato esta propiedad en Facebook, ` +
         'y quedará activa en el sitio y el bot de WhatsApp. La primera foto que agregaste será la portada. ¿Confirmas?',
     );
     if (!confirmado) return;
@@ -172,18 +195,21 @@ export class CargaDirectaComponent {
   }
 
   private limpiarFormulario() {
-    this.TipoPropiedad = 'Casa';
+    this.tipo = '';
     this.Modalidad = 'Venta';
     this.Precio = null;
     this.Direccion_Sector = '';
-    this.HAB = null;
-    this.BNO = null;
-    this.AreaCons = null;
-    this.AreaTerreno = null;
     this.Amoblado = 'No';
     this.Extras = '';
     this.compartidaPor = '';
     this.linkMapa = '';
+    this.detCasa = detallesCasaVacio();
+    this.detDep = detallesDepVacio();
+    this.detTerreno = detallesTerrenoVacio();
+    this.detLocal = detallesLocalVacio();
+    this.detBodega = detallesBodegaVacio();
+    this.detEdificio = detallesEdificioVacio();
+    this.detQuinta = detallesQuintaVacio();
     this.fotos.set([]);
   }
 

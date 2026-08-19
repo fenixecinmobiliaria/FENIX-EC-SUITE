@@ -74,10 +74,28 @@ function construirDescripcion(propiedad) {
     .filter(Boolean)
     .join(" · ");
 
+  // Datos extra capturados por tipo de propiedad (IPRUS, topografía, uso de suelo, etc.)
+  const tecnicos = [
+    propiedad.Topografia ? `Topografía: ${propiedad.Topografia}` : null,
+    propiedad.Edificabilidad || null,
+    propiedad.UsoSuelo ? `Uso de suelo: ${propiedad.UsoSuelo}` : null,
+    propiedad.EstadoDocumentos || null,
+    propiedad.Frente ? `Frente: ${propiedad.Frente}ml` : null,
+    propiedad.Fondo ? `Fondo: ${propiedad.Fondo}ml` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const caracteristicas = (propiedad.CaracteristicasInternas || []).join(" · ");
+  const seguridad = (propiedad.SeguridadAreasLibres || []).join(" · ");
+
   const partes = [
     `🏠 ${propiedad.TipoPropiedad} en ${modalidad} — ${propiedad.Direccion_Sector}, ${propiedad.CIUDAD}`,
     `💰 ${precio}`,
     detalles || null,
+    tecnicos || null,
+    caracteristicas ? `✨ ${caracteristicas}` : null,
+    seguridad ? `🔒 ${seguridad}` : null,
     propiedad.Extras || null,
     `📞 Contáctanos: ${NEGOCIO.telefonoHumano}`,
     `🌐 ${NEGOCIO.sitioWeb}`,
