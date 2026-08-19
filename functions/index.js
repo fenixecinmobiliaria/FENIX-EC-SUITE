@@ -167,19 +167,20 @@ exports.publicarPropiedad = onCall(
     }
 
     const propiedad = snap.data();
-    if (propiedad.Estado !== "Borrador") {
-      throw new HttpsError(
-        "failed-precondition",
-        `Esta propiedad ya no está en Borrador (Estado actual: ${propiedad.Estado}). Puede que ya se haya publicado.`
-      );
-    }
+    const esBorrador = propiedad.Estado === "Borrador";
 
     const imagenes = propiedad.imagenes || [];
     if (imagenes.length === 0) {
       throw new HttpsError("failed-precondition", "La propiedad no tiene fotos para publicar.");
     }
 
-    const nuevoEstado = propiedad.Precio_Venta ? "Venta" : "Renta";
+    // Dos orígenes posibles para este mismo botón:
+    //  - Borrador (pantalla de aprobación de Fenix EC Suite): al publicar en Facebook
+    //    con éxito, activa la propiedad (Estado -> Venta/Renta).
+    //  - Ya activa (botón "Facebook" del panel Mantenimiento del sitio, para una
+    //    propiedad que ya está en Venta/Renta/etc.): solo vuelve a publicar en
+    //    Facebook, sin tocar su Estado actual.
+    const nuevoEstado = esBorrador ? (propiedad.Precio_Venta ? "Venta" : "Renta") : propiedad.Estado;
     const mensaje = construirDescripcion(propiedad);
 
     let postId;
@@ -193,10 +194,10 @@ exports.publicarPropiedad = onCall(
       postId = await crearPostConFotos(pageToken, mensaje, photoIds);
     } catch (error) {
       logger.error(`Fallo al publicar en Facebook la propiedad ${propiedadId}:`, error);
-      throw new HttpsError(
-        "internal",
-        `No se pudo publicar en Facebook: ${error.message}. La propiedad sigue en Borrador, nada se publicó todavía.`
-      );
+      const notaEstado = esBorrador
+        ? "La propiedad sigue en Borrador, nada se publicó todavía."
+        : "El Estado de la propiedad no se modificó.";
+      throw new HttpsError("internal", `No se pudo publicar en Facebook: ${error.message}. ${notaEstado}`);
     }
 
     // Recién aquí, con el post de Facebook ya confirmado, la dejamos visible en
