@@ -129,25 +129,24 @@ async function llamarGraphApi(path, params) {
  * Un solo post por propiedad, con un LINK a la página de detalle en el sitio real
  * (no fotos nativas de Facebook).
  *
- * Se intentaron dos rutas nativas antes y ambas requieren una "capacidad" de la app
- * que Meta no otorga sin revisión (App Review):
+ * Se intentaron tres rutas antes de llegar a esta:
  *  - Fotos "sin publicar" + adjuntarlas a un post: "(#200) Unpublished posts must be
  *    posted to a page as the page itself" (pensado para anuncios, no orgánico).
  *  - Álbumes: "(#3) Application does not have the capability to make this API call."
+ *  - Link con `picture` manual: "(#100) Only owners of the URL have the ability to
+ *    specify the picture..." — hace falta verificar el dominio en Meta Business Suite
+ *    para poder forzar la foto de portada del link.
  *
- * Publicar fotos sueltas SÍ funciona, pero gasta una publicación del muro POR FOTO —
- * inaceptable si Facebook limita cuántas publicaciones puede hacer la cuenta.
- *
- * Un post con `link` (a la propia página de detalle del sitio) + `picture` (la
- * portada, para no depender de que el sitio tenga metaetiquetas Open Graph) es
- * funcionalidad básica de Acceso Estándar — un solo post por propiedad, sin importar
- * cuántas fotos tenga, y de paso lleva tráfico real al sitio.
+ * Por ahora: solo `message` + `link`, dejando que Facebook use lo que encuentre en la
+ * página enlazada (imagen genérica del sitio mientras `inmobiliariafenix.com` no
+ * tenga metaetiquetas Open Graph por propiedad, y el dominio no esté verificado en
+ * Meta). Sigue siendo UN solo post por propiedad, que es lo que importa para no
+ * gastar el cupo de publicaciones.
  */
-async function publicarPostConLink(pageToken, mensaje, linkDetalle, fotoPortada) {
+async function publicarPostConLink(pageToken, mensaje, linkDetalle) {
   const data = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/feed`, {
     message: mensaje,
     link: linkDetalle,
-    picture: fotoPortada,
     access_token: pageToken,
   });
   return data.id; // formato "{page-id}_{post-id}"
@@ -214,7 +213,7 @@ exports.publicarPropiedad = onCall(
       const pageToken = FACEBOOK_PAGE_TOKEN.value();
       const linkDetalle = `${NEGOCIO.sitioWeb}/detalle/${propiedadId}`;
       logger.info(`Publicando en Facebook (post con link) para ${propiedadId}...`);
-      postId = await publicarPostConLink(pageToken, mensaje, linkDetalle, imagenes[0]);
+      postId = await publicarPostConLink(pageToken, mensaje, linkDetalle);
     } catch (error) {
       logger.error(`Fallo al publicar en Facebook la propiedad ${propiedadId}:`, error);
       const notaEstado = esBorrador
