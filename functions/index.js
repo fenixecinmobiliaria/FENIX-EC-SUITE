@@ -126,38 +126,36 @@ async function llamarGraphApi(path, params) {
 }
 
 /**
- * Todas las fotos de una propiedad van a un ÁLBUM propio (no al muro directo).
+ * Un solo post por propiedad, con un LINK a la página de detalle en el sitio real
+ * (no fotos nativas de Facebook).
  *
- * Por qué: el enfoque "recomendado" de Meta para juntar varias fotos en un solo post
- * (subirlas como `published: false` y adjuntarlas con `attached_media`) da el error
- * "(#200) Unpublished posts must be posted to a page as the page itself" — esa vía
- * está más pensada para anuncios (Ads) que para publicaciones orgánicas normales, y
- * choca con los permisos de Acceso Estándar que tenemos. Publicar cada foto suelta
- * (`published: true`) sí funciona, pero gasta una publicación del muro POR FOTO —
- * un problema real cuando Facebook limita cuántas publicaciones/compartidos puede
- * hacer una cuenta nueva.
+ * Se intentaron dos rutas nativas antes y ambas requieren una "capacidad" de la app
+ * que Meta no otorga sin revisión (App Review):
+ *  - Fotos "sin publicar" + adjuntarlas a un post: "(#200) Unpublished posts must be
+ *    posted to a page as the page itself" (pensado para anuncios, no orgánico).
+ *  - Álbumes: "(#3) Application does not have the capability to make this API call."
  *
- * Los álbumes son un objeto distinto de la Graph API (no un "post sin publicar"), así
- * que no chocan con esa restricción. Al crear el álbum con toda la descripción como
- * mensaje y subir las fotos ahí, Facebook normalmente genera UNA sola publicación
- * consolidada en el muro ("agregó N fotos al álbum ..."), no una por foto.
+ * Publicar fotos sueltas SÍ funciona, pero gasta una publicación del muro POR FOTO —
+ * inaceptable si Facebook limita cuántas publicaciones puede hacer la cuenta.
+ *
+ * Un post con `link` (a la propia página de detalle del sitio) + `picture` (la
+ * portada, para no depender de que el sitio tenga metaetiquetas Open Graph) es
+ * funcionalidad básica de Acceso Estándar — un solo post por propiedad, sin importar
+ * cuántas fotos tenga, y de paso lleva tráfico real al sitio.
  */
-async function crearAlbumConFotos(pageToken, nombreAlbum, mensaje, imagenes) {
-  const album = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/albums`, {
-    name: nombreAlbum,
+async function publicarPostConLink(pageToken, mensaje, linkDetalle, fotoPortada) {
+  const data = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/feed`, {
     message: mensaje,
+    link: linkDetalle,
+    picture: fotoPortada,
     access_token: pageToken,
   });
-
-  for (const url of imagenes) {
-    await llamarGraphApi(`${album.id}/photos`, { url, access_token: pageToken });
-  }
-
-  return album.id;
+  return data.id; // formato "{page-id}_{post-id}"
 }
 
-function urlDelAlbum(albumId) {
-  return `https://www.facebook.com/media/set/?set=a.${albumId}`;
+function urlDelPost(postId) {
+  const [, soloId] = postId.split("_");
+  return soloId ? `https://www.facebook.com/${FACEBOOK_PAGE_ID}/posts/${soloId}` : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,12 +209,12 @@ exports.publicarPropiedad = onCall(
     const nuevoEstado = esBorrador ? (propiedad.Precio_Venta ? "Venta" : "Renta") : propiedad.Estado;
     const mensaje = construirDescripcion(propiedad);
 
-    let albumId;
+    let postId;
     try {
       const pageToken = FACEBOOK_PAGE_TOKEN.value();
-      logger.info(`Creando álbum con ${imagenes.length} fotos en Facebook para ${propiedadId}...`);
-      const nombreAlbum = `${propiedad.TipoPropiedad} · ${propiedad.Direccion_Sector} (${propiedad.IPD})`;
-      albumId = await crearAlbumConFotos(pageToken, nombreAlbum, mensaje, imagenes);
+      const linkDetalle = `${NEGOCIO.sitioWeb}/detalle/${propiedadId}`;
+      logger.info(`Publicando en Facebook (post con link) para ${propiedadId}...`);
+      postId = await publicarPostConLink(pageToken, mensaje, linkDetalle, imagenes[0]);
     } catch (error) {
       logger.error(`Fallo al publicar en Facebook la propiedad ${propiedadId}:`, error);
       const notaEstado = esBorrador
@@ -225,16 +223,16 @@ exports.publicarPropiedad = onCall(
       throw new HttpsError("internal", `No se pudo publicar en Facebook: ${error.message}. ${notaEstado}`);
     }
 
-    // Recién aquí, con el álbum de Facebook ya confirmado, la dejamos visible en
+    // Recién aquí, con el post de Facebook ya confirmado, la dejamos visible en
     // el sitio y el bot — así nunca queda "publicada" a medias.
-    const facebookPostUrl = urlDelAlbum(albumId);
+    const facebookPostUrl = urlDelPost(postId);
     await docRef.update({
       Estado: nuevoEstado,
-      facebookAlbumId: albumId,
+      facebookPostId: postId,
       facebookPostUrl,
     });
 
-    logger.info(`Propiedad ${propiedadId} publicada. Estado -> ${nuevoEstado}. Álbum: ${albumId}`);
+    logger.info(`Propiedad ${propiedadId} publicada. Estado -> ${nuevoEstado}. Post: ${postId}`);
 
     return { ok: true, estado: nuevoEstado, facebookPostUrl };
   }
