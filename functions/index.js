@@ -125,24 +125,21 @@ async function llamarGraphApi(path, params) {
   return data;
 }
 
-/** Sube una foto sin publicarla todavía (Facebook la descarga directo de la URL de Storage). */
-async function subirFotoSinPublicar(pageToken, imageUrl) {
-  const data = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/photos`, {
-    url: imageUrl,
-    published: false,
-    access_token: pageToken,
-  });
-  return data.id;
-}
-
-/** Crea el post final adjuntando todas las fotos ya subidas. */
-async function crearPostConFotos(pageToken, mensaje, photoIds) {
-  const data = await llamarGraphApi(`${FACEBOOK_PAGE_ID}/feed`, {
-    message: mensaje,
-    attached_media: photoIds.map((id) => ({ media_fbid: id })),
-    access_token: pageToken,
-  });
-  return data.id; // formato "{page-id}_{post-id}"
+/**
+ * Publica una foto directo en el muro de la Página (published: true).
+ *
+ * Nota: el enfoque "recomendado" de Meta (subir fotos como `published: false` y
+ * juntarlas después en un solo post con `attached_media`) da el error
+ * "(#200) Unpublished posts must be posted to a page as the page itself" con esta
+ * combinación de Página/token — es una restricción de cuentas administradas por
+ * Business Manager sin rol de administrador clásico adicional. Publicar cada foto
+ * directamente evita ese error; a cambio, cada foto queda como su propia publicación
+ * en vez de un solo post con varias fotos.
+ */
+async function subirFotoPublicada(pageToken, imageUrl, caption) {
+  const params = { url: imageUrl, published: true, access_token: pageToken };
+  if (caption) params.caption = caption;
+  return llamarGraphApi(`${FACEBOOK_PAGE_ID}/photos`, params);
 }
 
 function urlDelPost(postId) {
@@ -205,11 +202,13 @@ exports.publicarPropiedad = onCall(
     try {
       const pageToken = FACEBOOK_PAGE_TOKEN.value();
       logger.info(`Publicando ${imagenes.length} fotos en Facebook para ${propiedadId}...`);
-      const photoIds = [];
-      for (const url of imagenes) {
-        photoIds.push(await subirFotoSinPublicar(pageToken, url));
+      // La descripción completa va solo en la primera foto (esa es la publicación
+      // "principal" que devolvemos como link); el resto se publican sin texto para
+      // no repetir la descripción varias veces en el muro de la Página.
+      for (let i = 0; i < imagenes.length; i++) {
+        const resultado = await subirFotoPublicada(pageToken, imagenes[i], i === 0 ? mensaje : undefined);
+        if (i === 0) postId = resultado.post_id || resultado.id;
       }
-      postId = await crearPostConFotos(pageToken, mensaje, photoIds);
     } catch (error) {
       logger.error(`Fallo al publicar en Facebook la propiedad ${propiedadId}:`, error);
       const notaEstado = esBorrador
