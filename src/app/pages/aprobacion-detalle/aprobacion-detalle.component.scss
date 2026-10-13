@@ -15,7 +15,7 @@
 .volver {
   display: inline-block;
   margin-bottom: 16px;
-  color: #b8290f;
+  color: #8A6416;
   text-decoration: none;
   font-size: 14px;
 
@@ -59,8 +59,8 @@
   white-space: nowrap;
   padding: 6px 14px;
   border-radius: 999px;
-  background: #fde8d7;
-  color: #b8290f;
+  background: #F6ECD6;
+  color: #8A6416;
   font-size: 13px;
   font-weight: 600;
 }
@@ -123,8 +123,8 @@
   position: absolute;
   top: 8px;
   left: 8px;
-  background: #d9a02b;
-  color: #fff;
+  background: #C9962A;
+  color: #121212;
   font-size: 12px;
   font-weight: 700;
   padding: 3px 9px;
@@ -146,11 +146,11 @@
   }
 
   &--activo {
-    background: #d9a02b;
-    color: #fff;
+    background: #C9962A;
+    color: #121212;
 
     &:hover {
-      background: #c78f22;
+      background: #A87A1C;
     }
   }
 }
@@ -176,7 +176,7 @@
 
   &:focus {
     outline: none;
-    border-color: #b8290f;
+    border-color: #C9962A;
   }
 }
 
@@ -210,11 +210,11 @@
   }
 
   &--primario {
-    background: #b8290f;
-    color: #fff;
+    background: #C9962A;
+    color: #121212;
 
     &:hover:not(:disabled) {
-      background: #9c220c;
+      background: #A87A1C;
     }
   }
 }

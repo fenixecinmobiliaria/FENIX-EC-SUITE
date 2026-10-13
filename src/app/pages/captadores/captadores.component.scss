@@ -23,7 +23,7 @@
   h1 {
     margin: 0;
     font-size: 26px;
-    color: #b8290f;
+    color: #8A6416;
   }
 
   .subtitle {
@@ -76,7 +76,7 @@ label {
 
     &:focus {
       outline: none;
-      border-color: #b8290f;
+      border-color: #C9962A;
     }
   }
 }
@@ -159,7 +159,7 @@ label {
     border-color: #fbd0c9;
 
     &:hover:not(:disabled) {
-      background: #fde8d7;
+      background: #F6ECD6;
     }
   }
 }
@@ -173,9 +173,9 @@ label {
   cursor: pointer;
 
   &--primario {
-    background: #b8290f;
-    color: #fff;
-    &:hover:not(:disabled) { background: #9c220c; }
+    background: #C9962A;
+    color: #121212;
+    &:hover:not(:disabled) { background: #A87A1C; }
     &:disabled { opacity: 0.7; cursor: default; }
   }
 }
